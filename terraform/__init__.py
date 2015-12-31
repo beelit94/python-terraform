@@ -12,6 +12,7 @@ class Terraform:
         self.state = state
         self.variables = dict() if variables is None else variables
         self.state_data = None
+        self.parallelism = 50
 
     def apply(self, targets=None, variables=None):
         variables = self.variables if variables is None else variables
@@ -20,9 +21,7 @@ class Terraform:
         parameters = []
         parameters += self._generate_targets(targets)
         parameters += self._generate_var_string(variables)
-        # hard code 30 for splunk aws limit on us-west-2 region,
-        # todo move this to somewhere else
-        parameters += ['-parallelism=30']
+        parameters += ['-parallelism=%s' % self.parallelism]
         parameters = \
             ['terraform', 'apply', '-state=%s' % self.state] + parameters
 
