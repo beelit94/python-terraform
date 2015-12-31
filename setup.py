@@ -14,7 +14,7 @@ setup(
     url='https://github.com/beelit94/python-terraform',
     license='BSD',
     author='Freddy Tan',
-    author_email='ftan@splunk.com',
+    author_email='beelit94@gmail.com',
     description='This is a python module provide a wrapper of terraform command line tool',
     long_description=__doc__,
     packages=[module_name],
