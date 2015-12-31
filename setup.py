@@ -11,11 +11,11 @@ module_name = 'terraform'
 setup(
     name=module_name,
     version="0.0.1",
-    url='https://github.com/beelit94/tsplk',
+    url='https://github.com/beelit94/python-terraform',
     license='BSD',
     author='Freddy Tan',
     author_email='ftan@splunk.com',
-    description='My Tool does one thing, and one thing well.',
+    description='This is a python module provide a wrapper of terraform command line tool',
     long_description=__doc__,
     packages=[module_name],
     include_package_data=True,
@@ -23,11 +23,6 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=dependencies,
-    entry_points={
-        # 'console_scripts': [
-        #     'tsplk = %s.cli:main' % module_name,
-        # ],
-    },
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         # 'Development Status :: 1 - Planning',

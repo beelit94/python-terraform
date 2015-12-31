@@ -15,6 +15,9 @@ class Terraform:
         self.parallelism = 50
 
     def apply(self, targets=None, variables=None):
+        """
+        refer to https://terraform.io/docs/commands/apply.html
+        """
         variables = self.variables if variables is None else variables
         targets = self.targets if targets is None else targets
 
