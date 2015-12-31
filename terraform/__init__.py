@@ -9,8 +9,9 @@ log = logging.getLogger(__name__)
 class Terraform:
     def __init__(self, targets=None, state='terraform.tfstate', variables=None):
         self.targets = [] if targets is None else targets
-        self.state = state
         self.variables = dict() if variables is None else variables
+        
+        self.state = state
         self.state_data = None
         self.parallelism = 50
 
@@ -33,11 +34,13 @@ class Terraform:
 
     def _run_cmd(self, cmd):
         log.debug('command: ' + cmd)
+
         p = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         out, err = p.communicate()
         ret_code = p.returncode
         log.debug('output: ' + out)
+
         if ret_code == 0:
             log.debug('error: ' + err)
             self.read_state()
@@ -50,8 +53,7 @@ class Terraform:
         parameters = []
         parameters += self._generate_targets(targets)
         parameters += self._generate_var_string(variables)
-        # hard code 19 for splunk aws limit on us-west-2 region,
-        # todo move parallelism?
+
         parameters = \
             ['terraform', 'destroy', '-force', '-state=%s' % self.state] + \
             parameters
