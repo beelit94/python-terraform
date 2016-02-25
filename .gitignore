@@ -1,0 +1,5 @@
+*.tfstate
+*.tfstate.backup
+*.pyc
+*.egg-info
+.idea
