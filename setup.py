@@ -5,19 +5,29 @@ from distutils.core import setup
 import os
 
 dependencies = []
-module_name = 'terraform'
+module_name = 'python-terraform'
 
+
+def get_version():
+    p = os.path.join(os.path.dirname(
+        os.path.abspath(__file__)), "VERSION")
+    with open(p) as f:
+        version = f.read()
+        version = version.strip()
+        if not version:
+            raise ValueError("could not read version")
+        return version
 
 setup(
     name=module_name,
-    version="0.0.1",
+    version=get_version(),
     url='https://github.com/beelit94/python-terraform',
     license='BSD',
     author='Freddy Tan',
     author_email='beelit94@gmail.com',
     description='This is a python module provide a wrapper of terraform command line tool',
     long_description=__doc__,
-    packages=[module_name],
+    packages=['python_terraform'],
     include_package_data=True,
     package_data={},
     zip_safe=False,
