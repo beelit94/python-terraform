@@ -1,20 +1,15 @@
-from terraform import Terraform
+from python_terraform import Terraform
 
 
 class TestTerraform:
-	def test_apply(self):
-		tf = Terraform()
-		
-		tf.apply()
+    def test_apply_and_destory(self):
+        tf = Terraform()
+        ret_code, out, err = tf.apply()
 
-	def test_refresh(self):
-		tf = Terraform()
+        print out
+        print err
+        # assert ret_code, 0
 
-		tf.refresh()
+        ret_code, out, err = tf.destroy()
 
-	def test_destroy(self):
-		tf = Terraform()
-
-		tf.destroy()
-
-	
+        assert ret_code, 0
