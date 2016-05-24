@@ -39,7 +39,7 @@ class Terraform:
     def _gen_param_string(self, kargs):
         params = []
         for key, value in kargs.items():
-            if not value:
+            if value:
                 params += ['-%s=%s' % (key, value)]
             else:
                 params += ['-%s' % key]
