@@ -12,14 +12,14 @@ python:
 before_install: 'sudo apt-get install unzip'
 before_script:
   - 'wget https://releases.hashicorp.com/terraform/0.7.11/terraform_0.7.11_linux_amd64.zip'
-  - 'unzip terraform_0.7.11_linux_amd64.zip -d test'
-  - './test/terraform --version'
+  - 'mkdir tf_bin'
+  - 'unzip terraform_0.7.11_linux_amd64.zip -d tf_bin'
 
 install:
   - "pip install -r test/requirements.txt"
   - "pip install ."
 # command to run tests
 script:
-  - "export PATH=$PATH:$PWD/test"
+  - "export PATH=$PATH:$PWD/tf_bin"
   - cd test
   - py.test
