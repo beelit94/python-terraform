@@ -9,8 +9,15 @@ python:
 #  - "3.6-dev" # 3.6 development branch
 #  - "nightly" # currently points to 3.7-dev
 # command to install dependencies
+before_install: 'sudo apt-get install unzip'
+before_script:
+  - 'wget https://releases.hashicorp.com/terraform/0.7.11/terraform_0.7.11_linux_amd64.zip'
+  - 'mkdir terraform'
+  - 'unzip terraform_0.7.11_linux_amd64.zip -d terraform'
+  - 'sudo ln -s $PWD/terraform/terraform /usr/local/terraform'
+
 install: "pip install -r test/requirements.txt"
 # command to run tests
 script:
   - cd test
-  - pytest
+  - py.test
