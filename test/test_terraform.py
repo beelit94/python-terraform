@@ -69,7 +69,7 @@ class TestTerraform:
         assert ret == 0
 
     def test_state_data(self):
-        tf = Terraform(working_dir='test_tfstate_file')
+        tf = Terraform(working_dir='test_tfstate_file', state='tfstate.test')
         tf.read_state_file()
         assert tf.tfstate.modules[0]['path'] == ['root']
 
