@@ -16,7 +16,9 @@ before_script:
   - 'unzip terraform_0.7.11_linux_amd64.zip -d terraform'
   - 'sudo ln -s $PWD/terraform/terraform /usr/local/terraform'
 
-install: "pip install -r test/requirements.txt"
+install:
+  - "pip install -r test/requirements.txt"
+  - "pip install ."
 # command to run tests
 script:
   - cd test

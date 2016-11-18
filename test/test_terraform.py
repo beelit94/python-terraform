@@ -6,8 +6,6 @@ import re
 
 logging.basicConfig(level=logging.DEBUG)
 
-ACCESS_KEY = os.environ['PACKER_access_key']
-SECRET_KEY = os.environ['PACKER_secret_key']
 
 STRING_CASES = [
      [
@@ -29,8 +27,8 @@ CMD_CASES = [
     ['method', 'expected_output'],
     [
         [
-            lambda x: x.cmd('plan', 'aws_tf', no_color='', var={'access_key': ACCESS_KEY, 'secret_key': SECRET_KEY}) ,
-            'Plan: 1 to add, 0 to change, 0 to destroy'
+            lambda x: x.cmd('plan', 'apply_tf', no_color='', var={'test_var': 'test'}) ,
+            "doesn't need to do anything"
         ]
     ]
 ]
