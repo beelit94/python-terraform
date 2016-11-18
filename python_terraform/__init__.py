@@ -19,13 +19,15 @@ class Terraform:
                  state=None,
                  variables=None,
                  parallelism=None,
-                 var_file=None):
+                 var_file=None,
+                 terraform_bin_path=None):
         self.working_dir = working_dir
         self.state = state
         self.targets = [] if targets is None else targets
         self.variables = dict() if variables is None else variables
         self.parallelism = parallelism
-        self.terraform_bin_path = 'terraform'
+        self.terraform_bin_path = terraform_bin_path \
+            if terraform_bin_path else 'terraform'
         self.var_file = var_file
         self.input = False
 
