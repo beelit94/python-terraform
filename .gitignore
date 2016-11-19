@@ -3,3 +3,5 @@
 *.pyc
 *.egg-info
 .idea
+.cache
+/.pypirc

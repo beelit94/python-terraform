@@ -1,11 +1,16 @@
 """
-My Tool does one thing, and one thing well.
+This is a python module provide a wrapper of terraform command line tool
 """
-from distutils.core import setup
+from setuptools import setup
 import os
 
 dependencies = []
 module_name = 'python-terraform'
+short_description = 'This is a python module provide a wrapper ' \
+                    'of terraform command line tool'
+
+with open('DESCRIPTION.rst') as f:
+    long_description = f.read()
 
 
 def get_version():
@@ -22,15 +27,13 @@ setup(
     name=module_name,
     version=get_version(),
     url='https://github.com/beelit94/python-terraform',
-    license='BSD',
+    license='MIT',
     author='Freddy Tan',
     author_email='beelit94@gmail.com',
-    description='This is a python module provide a wrapper of terraform command line tool',
-    long_description=__doc__,
+    description=short_description,
+    long_description=long_description,
     packages=['python_terraform'],
-    include_package_data=True,
     package_data={},
-    zip_safe=False,
     platforms='any',
     install_requires=dependencies,
     classifiers=[
@@ -44,11 +47,11 @@ setup(
         # 'Development Status :: 7 - Inactive',
         'Environment :: Console',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX',
         'Operating System :: MacOS',
         'Operating System :: Unix',
-        'Operating System :: Windows',
+        # 'Operating System :: Windows',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
