@@ -33,7 +33,7 @@ deploy:
     password:
       secure: "sWxc+p/gdq3k2WbUGNG2F4TukFNkTkvq6OPaiOvyfgWThYNk6/juRkMd8flmTbh0VGhcjFbpDLeSApb2kFhfiokYJSH1hOOcmXf8xzYH8/+R4DDEiGa5Y/pR9TBvYu4S8eJEfFUFfb1BBpapykj7o43hcaqMExBJIdVJU7aeoEAC1jQeTJh8wWwdJKHy2dNSM+6RVhk3e5+b0LfK7Bk5sU5P+YdEMj79MJU450J4OmZXWzJgvBN5/2QfVa5LrUD00nYuGuiBniz2lVevIHWjUYawUzpPsTa7F0s2WemG9YcV7U8u06xNjY9Ce3CTbxNhc7OIKq+TCkOgR3qZFXVJ8A87G+AT2iQ01VslQ4DJCxnJNTnpqojWnwf6MFL9O8ONioWYO32bhQFKOQ806ASHP4lNMRDKqx8hXtP5In7/r0SARKscv6Bas83rp+FESkKD5vWgkZJG+yx96LlwRLUhSVnVyb/nOJ++zt5RR3BvY2O4p9YAZY3Qt8TQihOdBQKnY3UXsMyNaE25+yvyNWpmyJiePRbTUd+cpLnycnqG9Ll8v6TpFXb6ahFMjlAFfJNQYlREfseClTHSRjZNxfsXGQCsJh6TZAq7jOB5hCk3q41eOUFWARxbyj8j59NBV8fSQrrGJJ9/VZKQeYiQlBB9KpK4PrnH84oeQ8i+VSbVr5w="
     on:
-      branch: release
+      branch: release/*
       tags: false
       condition: $TRAVIS_PYTHON_VERSION = "2.7"
   # production pypi
