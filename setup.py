@@ -7,6 +7,12 @@ import os
 dependencies = []
 module_name = 'python-terraform'
 
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except(IOError, ImportError):
+    long_description = open('README.md').read()
+
 
 def get_version():
     p = os.path.join(os.path.dirname(
@@ -26,7 +32,7 @@ setup(
     author='Freddy Tan',
     author_email='beelit94@gmail.com',
     description='This is a python module provide a wrapper of terraform command line tool',
-    long_description=__doc__,
+    long_description=long_description,
     packages=['python_terraform'],
     package_data={},
     platforms='any',
