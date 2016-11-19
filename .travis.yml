@@ -16,6 +16,7 @@ before_script:
   - 'unzip terraform_0.7.11_linux_amd64.zip -d tf_bin'
 
 install:
+  - "curl https://bootstrap.pypa.io/ez_setup.py -o - | python"
   - "pip install -r test/requirements.txt"
   - "pip install ."
 # command to run tests
