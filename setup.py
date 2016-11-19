@@ -1,7 +1,7 @@
 """
 My Tool does one thing, and one thing well.
 """
-from distutils.core import setup
+from setuptools import setup
 import os
 
 dependencies = []
@@ -28,9 +28,7 @@ setup(
     description='This is a python module provide a wrapper of terraform command line tool',
     long_description=__doc__,
     packages=['python_terraform'],
-    include_package_data=True,
     package_data={},
-    zip_safe=False,
     platforms='any',
     install_requires=dependencies,
     classifiers=[
@@ -44,7 +42,7 @@ setup(
         # 'Development Status :: 7 - Inactive',
         'Environment :: Console',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: POSIX',
         'Operating System :: MacOS',
         'Operating System :: Unix',

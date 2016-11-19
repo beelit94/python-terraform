@@ -36,7 +36,7 @@ deploy:
     on:
       branch: "release/**"
       tags: false
-      condition: $TRAVIS_PYTHON_VERSION = "2.7"
+      condition: $TRAVIS_PYTHON_VERSION = "3.5"
   # production pypi
   - provider: pypi
     distributions: sdist
@@ -46,4 +46,4 @@ deploy:
     on:
       branch: master
       tags: true
-      condition: $TRAVIS_PYTHON_VERSION = "2.7"
+      condition: $TRAVIS_PYTHON_VERSION = "3.5"
