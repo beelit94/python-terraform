@@ -18,7 +18,7 @@ before_script:
 install:
   - "curl https://bootstrap.pypa.io/ez_setup.py -o - | python"
   - "pip install -r test/requirements.txt"
-  - "sudo apt-get -y install pypandoc"
+  - "sudo apt-get -y install pandoc"
   - "pip install ."
 # command to run tests
 script:
