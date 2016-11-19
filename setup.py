@@ -1,5 +1,5 @@
 """
-My Tool does one thing, and one thing well.
+This is a python module provide a wrapper of terraform command line tool
 """
 from setuptools import setup
 import os
@@ -9,11 +9,8 @@ module_name = 'python-terraform'
 short_description = 'This is a python module provide a wrapper ' \
                     'of terraform command line tool'
 
-try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
-except(IOError, ImportError, OSError):
-    long_description = short_description
+with open('DESCRIPTION.rst') as f:
+    long_description = f.read()
 
 
 def get_version():
