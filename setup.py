@@ -9,8 +9,11 @@ module_name = 'python-terraform'
 short_description = 'This is a python module provide a wrapper ' \
                     'of terraform command line tool'
 
-with open('DESCRIPTION.rst') as f:
-    long_description = f.read()
+try:
+    with open('DESCRIPTION.rst') as f:
+        long_description = f.read()
+except IOError:
+    long_description = short_description
 
 
 def get_version():
