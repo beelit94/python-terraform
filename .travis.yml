@@ -21,7 +21,9 @@ install:
 # command to run tests
 script:
   - "export PATH=$PATH:$PWD/tf_bin"
-  - py.test test
+  - cd test
+  - py.test
+  - cd ..
 
 deploy:
   # test pypi
