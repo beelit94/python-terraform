@@ -8,6 +8,14 @@ from python_terraform.tfstate import Tfstate
 log = logging.getLogger(__name__)
 
 
+class IsFlagged:
+    pass
+
+
+class IsNotFlagged:
+    pass
+
+
 class Terraform:
     """
     Wrapper of terraform command line tool
@@ -21,6 +29,15 @@ class Terraform:
                  parallelism=None,
                  var_file=None,
                  terraform_bin_path=None):
+        """
+        :param working_dir: the folder of the working folder, if not given, will be where python
+        :param targets: list of target
+        :param state: path of state file relative to working folder
+        :param variables: variables for apply/destroy/plan command
+        :param parallelism: parallelism for apply/destroy command
+        :param var_file: if specified, variables will not be used
+        :param terraform_bin_path: binary path of terraform
+        """
         self.working_dir = working_dir
         self.state = state
         self.targets = [] if targets is None else targets
@@ -29,42 +46,62 @@ class Terraform:
         self.terraform_bin_path = terraform_bin_path \
             if terraform_bin_path else 'terraform'
         self.var_file = var_file
-        self.input = False
 
         # store the tfstate data
         self.tfstate = dict()
 
     def apply(self,
-              working_dir=None,
-              no_color=True,
+              dir=None,
+              is_no_color=True,
+              is_input=False,
               **kwargs):
         """
         refer to https://terraform.io/docs/commands/apply.html
-        :param working_dir: working folder
-        :param no_color: Disables output with coloring.
+        :raise RuntimeError when return code is not zero
+        :param is_no_color: if True, add flag -no-color
+        :param is_input: if True, add option -input=true
+        :param dir: folder relative to working folder
+        :param kwargs: same as kwags in method 'cmd'
         :returns return_code, stdout, stderr
         """
-        if not working_dir:
-            working_dir = self.working_dir
 
+        args, option_dict = self._create_cmd_args(is_input,
+                                                  is_no_color,
+                                                  dir,
+                                                  kwargs)
+
+        return self.cmd('apply', *args, **option_dict)
+
+    def _create_cmd_args(self, is_input, is_no_color, dir, kwargs):
         option_dict = dict()
         option_dict['state'] = self.state
         option_dict['target'] = self.targets
         option_dict['var'] = self.variables
         option_dict['var_file'] = self.var_file
         option_dict['parallelism'] = self.parallelism
-        if no_color:
-            option_dict['no_color'] = ''
-        option_dict['input'] = self.input
-
+        if is_no_color:
+            option_dict['no_color'] = IsFlagged
+        option_dict['input'] = is_input
         option_dict.update(kwargs)
+        args = [dir] if dir else []
+        return args, option_dict
 
-        args = [working_dir] if working_dir else []
+    def destroy(self, working_dir=None, is_force=True,
+                is_no_color=True, is_input=False, **kwargs):
+        """
+        refer to https://www.terraform.io/docs/commands/destroy.html
+        :raise RuntimeError when return code is not zero
+        :return: ret_code, stdout, stderr
+        """
 
-        ret, out, err = self.cmd('apply', *args, **option_dict)
+        args, option_dict = self._create_cmd_args(is_input,
+                                                  is_no_color,
+                                                  working_dir,
+                                                  kwargs)
+        if is_force:
+            option_dict['force'] = IsFlagged
 
-        if ret != 0:
-            raise RuntimeError(err)
+        return self.cmd('destroy', *args, **option_dict)
 
     def generate_cmd_string(self, cmd, *args, **kwargs):
         """
@@ -82,11 +119,11 @@ class Terraform:
         --> generate_cmd_string call:
                 terraform apply -var='a=b' -var='c=d' -no-color the_folder
         --> python call:
-                tf.generate_cmd_string('apply', the_folder, no_color='', var={'a':'b', 'c':'d'})
+                tf.generate_cmd_string('apply', the_folder, no_color=IsFlagged, var={'a':'b', 'c':'d'})
 
         :param cmd: command and sub-command of terraform, seperated with space
                     refer to https://www.terraform.io/docs/commands/index.html
-        :param args: argument other than options of a command
+        :param args: arguments of a command
         :param kwargs: same as kwags in method 'cmd'
         :return: string of valid terraform command
         """
@@ -110,8 +147,11 @@ class Terraform:
                 continue
 
             # simple flag,
-            if v == '':
+            if v is IsFlagged:
                 cmds += ['-{k}'.format(k=k)]
+                continue
+
+            if v is IsNotFlagged:
                 continue
 
             if not v:
@@ -131,10 +171,12 @@ class Terraform:
         run a terraform command, if success, will try to read state file
         :param cmd: command and sub-command of terraform, seperated with space
                     refer to https://www.terraform.io/docs/commands/index.html
-        :param args: argument other than options of a command
-        :param kwargs:  any option flag with key value other than variables,
-                if there's a dash in the option name, use under line instead of dash, ex -no-color --> no_color
-                if it's a simple flag with no value, value should be empty string
+        :param args: arguments of a command
+        :param kwargs:  any option flag with key value without prefixed dash character
+                if there's a dash in the option name, use under line instead of dash,
+                    ex. -no-color --> no_color
+                if it's a simple flag with no value, value should be IsFlagged
+                    ex. cmd('taint', allow＿missing=IsFlagged)
                 if it's a boolean value flag, assign True or false
                 if it's a flag could be used multiple times, assign list to it's value
                 if it's a "var" variable flag, assign dictionary to it
@@ -144,8 +186,11 @@ class Terraform:
         cmd_string = self.generate_cmd_string(cmd, *args, **kwargs)
         log.debug('command: {c}'.format(c=cmd_string))
 
+        working_folder = self.working_dir if self.working_dir else None
+
         p = subprocess.Popen(cmd_string, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, shell=True)
+                             stderr=subprocess.PIPE, shell=True,
+                             cwd=working_folder)
         out, err = p.communicate()
         ret_code = p.returncode
         log.debug('output: {o}'.format(o=out))
@@ -162,8 +207,9 @@ class Terraform:
         :param name: name of output
         :return: output value
         """
-        ret, out, err = self.cmd('output', name, json='')
+        ret, out, err = self.cmd('output', name, json=IsFlagged)
 
+        log.debug('output raw string: {0}'.format(out))
         if ret != 0:
             return None
         out = out.lstrip()

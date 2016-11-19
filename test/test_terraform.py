@@ -1,16 +1,16 @@
-from python_terraform import Terraform
+from python_terraform import *
 import pytest
 import os
 import logging
 import re
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
 
 
 STRING_CASES = [
      [
          lambda x: x.generate_cmd_string('apply', 'the_folder',
-                                         no_color='',
+                                         no_color=IsFlagged,
                                          var={'a': 'b', 'c': 'd'}),
          "terraform apply -var='a=b' -var='c=d' -no-color the_folder"
      ],
@@ -27,7 +27,7 @@ CMD_CASES = [
     ['method', 'expected_output'],
     [
         [
-            lambda x: x.cmd('plan', 'apply_tf', no_color='', var={'test_var': 'test'}) ,
+            lambda x: x.cmd('plan', 'apply_tf', no_color=IsFlagged, var={'test_var': 'test'}) ,
             "doesn't need to do anything"
         ]
     ]
@@ -73,9 +73,16 @@ class TestTerraform:
 
     def test_apply(self):
         tf = Terraform(working_dir='apply_tf', variables={'test_var': 'test'})
-        tf.apply(var={'test_var': 'test2'})
+        ret, out, err = tf.apply(var={'test_var': 'test2'})
+        assert ret == 0
 
     def test_get_output(self):
         tf = Terraform(working_dir='apply_tf', variables={'test_var': 'test'})
         tf.apply()
         assert tf.output('test_output') == 'test'
+
+    def test_destroy(self):
+        tf = Terraform(working_dir='apply_tf', variables={'test_var': 'test'})
+        ret, out, err = tf.destroy()
+        assert ret == 0
+        assert 'Destroy complete! Resources: 0 destroyed.' in out
