@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# above is for compatibility of python2
+# above is for compatibility of python2.7.11
 
 import json
 import os
