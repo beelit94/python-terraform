@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# above is for compatibility of python2
+
 import json
 import os
 import logging
