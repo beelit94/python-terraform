@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# above is for compatibility of python2.7.11
+
 import subprocess
 import os
 import json
