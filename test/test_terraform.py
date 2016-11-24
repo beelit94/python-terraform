@@ -5,7 +5,7 @@ import logging
 import re
 
 logging.basicConfig(level=logging.WARN)
-
+current_path = os.path.dirname(os.path.realpath(__file__))
 
 STRING_CASES = [
      [
@@ -61,28 +61,40 @@ class TestTerraform:
 
     @pytest.mark.parametrize(*CMD_CASES)
     def test_cmd(self, method, expected_output):
-        tf = Terraform()
+        tf = Terraform(working_dir=current_path)
         ret, out, err = method(tf)
         assert expected_output in out
         assert ret == 0
 
     def test_state_data(self):
-        tf = Terraform(working_dir='test_tfstate_file', state='tfstate.test')
+        cwd = os.path.join(current_path, 'test_tfstate_file')
+        tf = Terraform(working_dir=cwd, state='tfstate.test')
         tf.read_state_file()
         assert tf.tfstate.modules[0]['path'] == ['root']
 
     def test_apply(self):
-        tf = Terraform(working_dir='apply_tf', variables={'test_var': 'test'})
+        cwd = os.path.join(current_path, 'apply_tf')
+        tf = Terraform(working_dir=cwd, variables={'test_var': 'test'})
         ret, out, err = tf.apply(var={'test_var': 'test2'})
         assert ret == 0
 
+    def test_override_no_color(self):
+        cwd = os.path.join(current_path, 'apply_tf')
+        tf = Terraform(working_dir=cwd, variables={'test_var': 'test'})
+        ret, out, err = tf.apply(var={'test_var': 'test2'},
+                                 no_color=IsNotFlagged)
+        out = out.replace('\n', '')
+        assert '\x1b[0m\x1b[1m\x1b[32mApply' in out
+
     def test_get_output(self):
-        tf = Terraform(working_dir='apply_tf', variables={'test_var': 'test'})
+        cwd = os.path.join(current_path, 'apply_tf')
+        tf = Terraform(working_dir=cwd, variables={'test_var': 'test'})
         tf.apply()
         assert tf.output('test_output') == 'test'
 
     def test_destroy(self):
-        tf = Terraform(working_dir='apply_tf', variables={'test_var': 'test'})
+        cwd = os.path.join(current_path, 'apply_tf')
+        tf = Terraform(working_dir=cwd, variables={'test_var': 'test'})
         ret, out, err = tf.destroy()
         assert ret == 0
         assert 'Destroy complete! Resources: 0 destroyed.' in out

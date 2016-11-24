@@ -5,3 +5,4 @@
 .idea
 .cache
 /.pypirc
+/.tox/
