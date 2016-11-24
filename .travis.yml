@@ -17,14 +17,12 @@ before_script:
 
 install:
   - "curl https://bootstrap.pypa.io/ez_setup.py -o - | python"
-  - "pip install pytest"
+  - "pip install tox-travis"
   - "pip install ."
 # command to run tests
 script:
   - "export PATH=$PATH:$PWD/tf_bin"
-  - cd test
-  - py.test
-  - cd ..
+  - tox
 
 deploy:
   # test pypi
