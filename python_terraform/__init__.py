@@ -53,57 +53,40 @@ class Terraform:
         # store the tfstate data
         self.tfstate = dict()
 
-    def apply(self,
-              dir=None,
-              is_no_color=True,
-              is_input=False,
-              **kwargs):
+    def apply(self, dir_or_plan=None, **kwargs):
         """
         refer to https://terraform.io/docs/commands/apply.html
-        :raise RuntimeError when return code is not zero
-        :param is_no_color: if True, add flag -no-color
-        :param is_input: if True, add option -input=true
-        :param dir: folder relative to working folder
+        no-color is flagged by default
+        :param dir_or_plan: folder relative to working folder
         :param kwargs: same as kwags in method 'cmd'
         :returns return_code, stdout, stderr
         """
-
-        args, option_dict = self._create_cmd_args(is_input,
-                                                  is_no_color,
-                                                  dir,
-                                                  kwargs)
+        default = dict()
+        args, option_dict = self._create_cmd_args(dir_or_plan, default, kwargs)
 
         return self.cmd('apply', *args, **option_dict)
 
-    def _create_cmd_args(self, is_input, is_no_color, dir, kwargs):
-        option_dict = dict()
+    def _create_cmd_args(self, dir_or_plan, default_dict, kwargs):
+        option_dict = default_dict
         option_dict['state'] = self.state
         option_dict['target'] = self.targets
         option_dict['var'] = self.variables
         option_dict['var_file'] = self.var_file
         option_dict['parallelism'] = self.parallelism
-        if is_no_color:
-            option_dict['no_color'] = IsFlagged
-        option_dict['input'] = is_input
+        option_dict['no_color'] = IsFlagged
+        option_dict['input'] = True
         option_dict.update(kwargs)
-        args = [dir] if dir else []
+        args = [dir_or_plan] if dir_or_plan else []
         return args, option_dict
 
-    def destroy(self, working_dir=None, is_force=True,
-                is_no_color=True, is_input=False, **kwargs):
+    def destroy(self, dir_or_plan=None, **kwargs):
         """
         refer to https://www.terraform.io/docs/commands/destroy.html
-        :raise RuntimeError when return code is not zero
+        force/no-color option is flagged by default
         :return: ret_code, stdout, stderr
         """
-
-        args, option_dict = self._create_cmd_args(is_input,
-                                                  is_no_color,
-                                                  working_dir,
-                                                  kwargs)
-        if is_force:
-            option_dict['force'] = IsFlagged
-
+        default = {'force': IsFlagged}
+        args, option_dict = self._create_cmd_args(dir_or_plan, default, kwargs)
         return self.cmd('destroy', *args, **option_dict)
 
     def generate_cmd_string(self, cmd, *args, **kwargs):
