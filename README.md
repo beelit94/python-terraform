@@ -29,10 +29,6 @@ For any terraform command
                 if a value is None, will skip this option
         :return: ret_code, out, err
 
-For apply/destroy method, the flag options, like, `-no-color` or `-force`
-have been implemented as boolean argument. simply use `is_no_color=True/False` for
-apply/destroy method
-
 
 ## Examples
 ### Have a test.tf file under folder "/home/test"
@@ -46,7 +42,7 @@ In python-terraform:
 
     from python_terraform import Terraform
     tf = terraform(working_dir='/home/test')
-    tf.apply(is_no_color=True, refresh=False, var={'a':'b', 'c':'d'})
+    tf.apply(no_color=IsFlagged, refresh=False, var={'a':'b', 'c':'d'})
 #### taint command, allow-missing and no color
 In shell:
 
