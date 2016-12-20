@@ -5,6 +5,7 @@ import subprocess
 import os
 import json
 import logging
+import tempfile
 
 from python_terraform.tfstate import Tfstate
 
@@ -19,7 +20,7 @@ class IsNotFlagged:
     pass
 
 
-class Terraform:
+class Terraform(object):
     """
     Wrapper of terraform command line tool
     https://www.terraform.io/
@@ -38,7 +39,8 @@ class Terraform:
         :param state: path of state file relative to working folder
         :param variables: variables for apply/destroy/plan command
         :param parallelism: parallelism for apply/destroy command
-        :param var_file: if specified, variables will not be used
+        :param var_file: passed as value of -var-file option, could be string or list
+            list stands for multiple -var-file option
         :param terraform_bin_path: binary path of terraform
         """
         self.working_dir = working_dir
@@ -49,9 +51,18 @@ class Terraform:
         self.terraform_bin_path = terraform_bin_path \
             if terraform_bin_path else 'terraform'
         self.var_file = var_file
+        self.temp_var_files = VaribleFiles()
 
         # store the tfstate data
-        self.tfstate = dict()
+        self.tfstate = None
+        self.read_state_file(self.state)
+
+    def __getattr__(self, item):
+        def wrapper(*args, **kwargs):
+            print('called with %r and %r' % (args, kwargs))
+            return self.cmd(item, *args, **kwargs)
+
+        return wrapper
 
     def apply(self, dir_or_plan=None, **kwargs):
         """
@@ -74,7 +85,7 @@ class Terraform:
         option_dict['var_file'] = self.var_file
         option_dict['parallelism'] = self.parallelism
         option_dict['no_color'] = IsFlagged
-        option_dict['input'] = True
+        option_dict['input'] = False
         option_dict.update(kwargs)
         args = [dir_or_plan] if dir_or_plan else []
         return args, option_dict
@@ -125,11 +136,12 @@ class Terraform:
                     cmds += ['-{k}={v}'.format(k=k, v=sub_v)]
                 continue
 
+            # right now we assume only variables will be passed as dict
+            # since map type sent in string won't work, create temp var file for
+            # variables, and clean it up later
             if type(v) is dict:
-                for sub_k, sub_v in v.items():
-                    cmds += ["-{k}='{var_k}={var_v}'".format(k=k,
-                                                             var_k=sub_k,
-                                                             var_v=sub_v)]
+                filename = self.temp_var_files.create(v)
+                cmds += ['-var-file={0}'.format(filename)]
                 continue
 
             # simple flag,
@@ -185,6 +197,8 @@ class Terraform:
             self.read_state_file()
         else:
             log.warn('error: {e}'.format(e=err))
+
+        self.temp_var_files.clean_up()
         return ret_code, out.decode('utf-8'), err.decode('utf-8')
 
     def output(self, name):
@@ -220,3 +234,26 @@ class Terraform:
             file_path = os.path.join(self.working_dir, file_path)
 
         self.tfstate = Tfstate.load_file(file_path)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.temp_var_files.clean_up()
+
+
+class VaribleFiles(object):
+    def __init__(self):
+        self.files = []
+
+    def create(self, variables):
+        with tempfile.NamedTemporaryFile('w+t', delete=False) as temp:
+            logging.debug('{0} is created'.format(temp.name))
+            self.files.append(temp)
+            temp.write(json.dumps(variables))
+            file_name = temp.name
+
+        return file_name
+
+    def clean_up(self):
+        for f in self.files:
+            os.unlink(f.name)
+
+        self.files = []
