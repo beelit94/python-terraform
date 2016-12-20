@@ -50,7 +50,7 @@ class TestTerraform(object):
                  "method", "expected"
              ], STRING_CASES)
     def test_generate_cmd_string(self, method, expected):
-        tf = Terraform()
+        tf = Terraform(working_dir=current_path)
         result = method(tf)
 
         strs = expected.split()
@@ -73,7 +73,7 @@ class TestTerraform(object):
             ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, 'var_to_output/test_map_var.json', "test_map_output={a=ab=bc=cd=de=ef=f}")
         ])
     def test_apply(self, folder, variables, var_files, expected_output):
-        tf = Terraform(variables=variables, var_file=var_files)
+        tf = Terraform(working_dir=current_path, variables=variables, var_file=var_files)
         ret, out, err = tf.apply(folder)
         assert ret == 0
         assert expected_output in out.replace('\n', '').replace(' ', '')
@@ -98,24 +98,24 @@ class TestTerraform(object):
         ]
     )
     def test_override_default(self, folder, variables):
-        tf = Terraform(variables=variables)
+        tf = Terraform(working_dir=current_path, variables=variables)
         ret, out, err = tf.apply(folder, var={'test_var': 'test2'},
                                  no_color=IsNotFlagged)
         out = out.replace('\n', '')
         assert '\x1b[0m\x1b[1m\x1b[32mApply' in out
 
     def test_get_output(self):
-        tf = Terraform(variables={'test_var': 'test'})
+        tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         tf.apply('var_to_output')
         assert tf.output('test_output') == 'test'
 
     def test_destroy(self):
-        tf = Terraform(variables={'test_var': 'test'})
+        tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         ret, out, err = tf.destroy('var_to_output')
         assert ret == 0
         assert 'Destroy complete! Resources: 0 destroyed.' in out
 
     def test_fmt(self):
-        tf = Terraform(variables={'test_var': 'test'})
+        tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         ret, out, err = tf.fmt(diff=True)
         assert ret == 0
