@@ -11,9 +11,15 @@ python:
 # command to install dependencies
 before_install: 'sudo apt-get install unzip'
 before_script:
-  - 'wget https://releases.hashicorp.com/terraform/0.7.11/terraform_0.7.11_linux_amd64.zip'
+  - 'export TFVER=0.8.1'
+  - 'export TFURL=https://releases.hashicorp.com/terraform/'
+  - 'TFURL+=$TFVER'
+  - 'TFURL+="/terraform_"'
+  - 'TFURL+=$TFVER'
+  - 'TFURL+="_linux_amd64.zip"'
+  - 'wget $TFURL -O terraform_bin.zip'
   - 'mkdir tf_bin'
-  - 'unzip terraform_0.7.11_linux_amd64.zip -d tf_bin'
+  - 'unzip terraform_bin.zip -d tf_bin'
 
 install:
   - "curl https://bootstrap.pypa.io/ez_setup.py -o - | python"

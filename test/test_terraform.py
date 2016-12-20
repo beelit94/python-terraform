@@ -4,22 +4,20 @@ import os
 import logging
 import re
 
-logging.basicConfig(level=logging.WARN)
+logging.basicConfig(level=logging.DEBUG)
 current_path = os.path.dirname(os.path.realpath(__file__))
 
 STRING_CASES = [
      [
          lambda x: x.generate_cmd_string('apply', 'the_folder',
-                                         no_color=IsFlagged,
-                                         var={'a': 'b', 'c': 'd'}),
-         "terraform apply -var='a=b' -var='c=d' -no-color the_folder"
+                                         no_color=IsFlagged),
+         "terraform apply -no-color the_folder"
      ],
      [
-         lambda x: x.generate_cmd_string('push', 'path',
-                                         var={'a': 'b'}, vcs=True,
+         lambda x: x.generate_cmd_string('push', 'path', vcs=True,
                                          token='token',
                                          atlas_address='url'),
-         "terraform push -var='a=b' -vcs=true -token=token -atlas-address=url path"
+         "terraform push -vcs=true -token=token -atlas-address=url path"
      ],
  ]
 
@@ -27,14 +25,14 @@ CMD_CASES = [
     ['method', 'expected_output'],
     [
         [
-            lambda x: x.cmd('plan', 'apply_tf', no_color=IsFlagged, var={'test_var': 'test'}) ,
+            lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}) ,
             "doesn't need to do anything"
         ]
     ]
 ]
 
 
-class TestTerraform:
+class TestTerraform(object):
     def teardown_method(self, method):
         """ teardown any state that was previously setup with a setup_method
         call.
@@ -52,7 +50,7 @@ class TestTerraform:
                  "method", "expected"
              ], STRING_CASES)
     def test_generate_cmd_string(self, method, expected):
-        tf = Terraform()
+        tf = Terraform(working_dir=current_path)
         result = method(tf)
 
         strs = expected.split()
@@ -66,35 +64,58 @@ class TestTerraform:
         assert expected_output in out
         assert ret == 0
 
+    @pytest.mark.parametrize(
+        ("folder", "variables", "var_files", "expected_output"),
+        [
+            ("var_to_output", {'test_var': 'test'}, None, "test_output=test"),
+            ("var_to_output", {'test_list_var': ['c', 'd']}, None, "test_list_output=[c,d]"),
+            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, None, "test_map_output={a=ab=bc=cd=d}"),
+            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, 'var_to_output/test_map_var.json', "test_map_output={a=ab=bc=cd=de=ef=f}")
+        ])
+    def test_apply(self, folder, variables, var_files, expected_output):
+        tf = Terraform(working_dir=current_path, variables=variables, var_file=var_files)
+        ret, out, err = tf.apply(folder)
+        assert ret == 0
+        assert expected_output in out.replace('\n', '').replace(' ', '')
+        assert err == ''
+
+
     def test_state_data(self):
         cwd = os.path.join(current_path, 'test_tfstate_file')
         tf = Terraform(working_dir=cwd, state='tfstate.test')
         tf.read_state_file()
         assert tf.tfstate.modules[0]['path'] == ['root']
 
-    def test_apply(self):
-        cwd = os.path.join(current_path, 'apply_tf')
-        tf = Terraform(working_dir=cwd, variables={'test_var': 'test'})
-        ret, out, err = tf.apply(var={'test_var': 'test2'})
-        assert ret == 0
+    def test_pre_load_state_data(self):
+        cwd = os.path.join(current_path, 'test_tfstate_file')
+        tf = Terraform(working_dir=cwd, state='tfstate.test')
+        assert tf.tfstate.modules[0]['path'] == ['root']
 
-    def test_override_no_color(self):
-        cwd = os.path.join(current_path, 'apply_tf')
-        tf = Terraform(working_dir=cwd, variables={'test_var': 'test'})
-        ret, out, err = tf.apply(var={'test_var': 'test2'},
+    @pytest.mark.parametrize(
+        ("folder", 'variables'),
+        [
+            ("var_to_output", {'test_var': 'test'})
+        ]
+    )
+    def test_override_default(self, folder, variables):
+        tf = Terraform(working_dir=current_path, variables=variables)
+        ret, out, err = tf.apply(folder, var={'test_var': 'test2'},
                                  no_color=IsNotFlagged)
         out = out.replace('\n', '')
         assert '\x1b[0m\x1b[1m\x1b[32mApply' in out
 
     def test_get_output(self):
-        cwd = os.path.join(current_path, 'apply_tf')
-        tf = Terraform(working_dir=cwd, variables={'test_var': 'test'})
-        tf.apply()
+        tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
+        tf.apply('var_to_output')
         assert tf.output('test_output') == 'test'
 
     def test_destroy(self):
-        cwd = os.path.join(current_path, 'apply_tf')
-        tf = Terraform(working_dir=cwd, variables={'test_var': 'test'})
-        ret, out, err = tf.destroy()
+        tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
+        ret, out, err = tf.destroy('var_to_output')
         assert ret == 0
         assert 'Destroy complete! Resources: 0 destroyed.' in out
+
+    def test_fmt(self):
+        tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
+        ret, out, err = tf.fmt(diff=True)
+        assert ret == 0

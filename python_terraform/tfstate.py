@@ -29,6 +29,6 @@ class Tfstate(object):
             tf_state.tfstate_file = file_path
             return tf_state
 
-        log.warn('{0} is not exist'.format(file_path))
+        log.debug('{0} is not exist'.format(file_path))
 
         return Tfstate()
