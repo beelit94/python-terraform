@@ -79,6 +79,20 @@ class TestTerraform(object):
         assert expected_output in out.replace('\n', '').replace(' ', '')
         assert err == ''
 
+    @pytest.mark.parametrize(
+        ['cmd', 'args', 'options'],
+        [
+            # bool value
+            ('fmt', ['bad_fmt'], {'list': False, 'diff': False})
+        ]
+    )
+    def test_options(self, cmd, args, options):
+        tf = Terraform(working_dir=current_path)
+        ret, out, err = getattr(tf, cmd)(*args, **options)
+        assert ret == 0
+        assert out == ''
+    #     todo revert the test file
+
 
     def test_state_data(self):
         cwd = os.path.join(current_path, 'test_tfstate_file')
