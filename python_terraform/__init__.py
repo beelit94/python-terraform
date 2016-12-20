@@ -51,7 +51,7 @@ class Terraform(object):
         self.terraform_bin_path = terraform_bin_path \
             if terraform_bin_path else 'terraform'
         self.var_file = var_file
-        self.temp_var_files = VaribleFiles()
+        self.temp_var_files = VariableFiles()
 
         # store the tfstate data
         self.tfstate = None
@@ -59,7 +59,7 @@ class Terraform(object):
 
     def __getattr__(self, item):
         def wrapper(*args, **kwargs):
-            print('called with %r and %r' % (args, kwargs))
+            logging.debug('called with %r and %r' % (args, kwargs))
             return self.cmd(item, *args, **kwargs)
 
         return wrapper
@@ -152,11 +152,11 @@ class Terraform(object):
             if v is IsNotFlagged:
                 continue
 
-            if not v:
-                continue
-
             if type(v) is bool:
                 v = 'true' if v else 'false'
+
+            if not v:
+                continue
 
             cmds += ['-{k}={v}'.format(k=k, v=v)]
 
@@ -239,7 +239,7 @@ class Terraform(object):
         self.temp_var_files.clean_up()
 
 
-class VaribleFiles(object):
+class VariableFiles(object):
     def __init__(self):
         self.files = []
 

@@ -3,6 +3,7 @@ import pytest
 import os
 import logging
 import re
+import shutil
 
 logging.basicConfig(level=logging.DEBUG)
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -30,6 +31,19 @@ CMD_CASES = [
         ]
     ]
 ]
+
+@pytest.fixture()
+def fmt_test_file(request):
+    target = os.path.join(current_path, 'bad_fmt', 'test.backup')
+    orgin = os.path.join(current_path, 'bad_fmt', 'test.tf')
+    shutil.copy(orgin,
+                target)
+
+    def td():
+        shutil.move(target, orgin)
+
+    request.addfinalizer(td)
+    return
 
 
 class TestTerraform(object):
@@ -79,6 +93,18 @@ class TestTerraform(object):
         assert expected_output in out.replace('\n', '').replace(' ', '')
         assert err == ''
 
+    @pytest.mark.parametrize(
+        ['cmd', 'args', 'options'],
+        [
+            # bool value
+            ('fmt', ['bad_fmt'], {'list': False, 'diff': False})
+        ]
+    )
+    def test_options(self, cmd, args, options, fmt_test_file):
+        tf = Terraform(working_dir=current_path)
+        ret, out, err = getattr(tf, cmd)(*args, **options)
+        assert ret == 0
+        assert out == ''
 
     def test_state_data(self):
         cwd = os.path.join(current_path, 'test_tfstate_file')
