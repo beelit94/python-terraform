@@ -17,9 +17,12 @@ python-terraform is a python module provide a wrapper of `terraform` command lin
     return_code, stdout, stderr = t.<cmd_name>(*arguments, **options)
     
 ####For any parameter
-simply pass as argument in order of method, for example,
+simply pass the string to arguments of the method, for example,
 
-    terraform apply target_dir --> <instance>.apply('target_dir')
+    terraform apply target_dir 
+        --> <instance>.apply('target_dir')
+    terraform import aws_instance.foo i-abcd1234 
+        --> <instance>.import('aws_instance.foo', 'i-abcd1234')
 
 ####For any options
     
