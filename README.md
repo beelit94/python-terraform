@@ -10,23 +10,53 @@ python-terraform is a python module provide a wrapper of `terraform` command lin
     pip install python-terraform
     
 ## Usage
-For any terraform command
+####For any terraform command
 
     from python_terraform import Terraform
     t = Terraform()
     return_code, stdout, stderr = t.<cmd_name>(*arguments, **options)
     
-For any options
+####For any parameter
+simply pass as argument in order of method, for example,
+
+    terraform apply target_dir --> <instance>.apply('target_dir')
+
+####For any options
     
-    if there's a dash in the option name, use under line instead of dash,
+* dash to underscore
+
+    remove first dash, and then use underscore to replace dash symbol as option name
+        
         ex. -no-color --> no_color
-    if it's a simple flag with no value, value should be IsFlagged
-        ex. cmd('taint', allow＿missing=IsFlagged)
-    if it's a boolean value flag like "-refresh=true", assign True or False
-    if it's a flag could be used multiple times, assign list to it's value
-    if it's a "var" variable flag, assign dictionary to it
-    if a value is None, will skip this option
+
+* for a simple flag option
+
+    use ```IsFlagged/None``` as value for raising/not raising flag, for example, 
     
+        terraform taint -allow-missing 
+           --> <instance>.taint(allow＿missing=IsFlagged)
+        terraform taint 
+           --> <instance>.taint(allow＿missing=None) or <instance>.taint()
+        terraform apply -no-color
+           --> <instance>.apply(no_color=IsFlagged)
+        
+* for a boolean value option
+    
+    assign True or False, for example,
+    
+        terraform apply -refresh=true --> <instance>.apply(refresh=True)
+         
+* if a flag could be used multiple times, assign a list to it's value
+        
+        terraform apply -target=aws_instance.foo[1] -target=aws_instance.foo[2]
+        ---> 
+        <instance>.apply(target=['aws_instance.foo[1]', 'aws_instance.foo[2]'])
+* for the "var" flag, assign dictionary to it
+
+        terraform apply -var='a=b' -var='c=d'
+        --> tf.apply(var={'a':'b', 'c':'d'})
+* if an option with None as value, it won't be used
+
 ## Examples
 ### Have a test.tf file under folder "/home/test" 
 #### 1. apply with variables a=b, c=d, refresh=false, no color in the output
