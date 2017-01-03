@@ -73,11 +73,10 @@ class Terraform(object):
         :returns return_code, stdout, stderr
         """
         default = dict()
-        args, option_dict = self._create_cmd_args(dir_or_plan, default, kwargs)
-
+        args, option_dict = self._generate_default_args(dir_or_plan, default, kwargs)
         return self.cmd('apply', *args, **option_dict)
 
-    def _create_cmd_args(self, dir_or_plan, default_dict, kwargs):
+    def _generate_default_args(self, dir_or_plan, default_dict, kwargs):
         option_dict = default_dict
         option_dict['state'] = self.state
         option_dict['target'] = self.targets
@@ -97,7 +96,7 @@ class Terraform(object):
         :return: ret_code, stdout, stderr
         """
         default = {'force': IsFlagged}
-        args, option_dict = self._create_cmd_args(dir_or_plan, default, kwargs)
+        args, option_dict = self._generate_default_args(dir_or_plan, default, kwargs)
         return self.cmd('destroy', *args, **option_dict)
 
     def generate_cmd_string(self, cmd, *args, **kwargs):

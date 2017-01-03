@@ -8,16 +8,7 @@ python-terraform is a python module provide a wrapper of `terraform` command lin
 
 ## Installation
     pip install python-terraform
-
-## Implementation
-IMHO, how terraform design boolean options is confusing. 
-Take `input=True` and `-no-color` option of `apply` command for example,
-they're all boolean value but with different option type. 
-This make api caller don't have a general rule to follow but to do 
-a exhaustive method implementation which I don't prefer to.
-Therefore I end-up with using `IsFlagged` or `IsNotFlagged` as value of option 
-like `-no-color` and `True/False` value reserved for option like 
-
+    
 ## Usage
 For any terraform command
 
@@ -35,7 +26,7 @@ For any options
     if it's a flag could be used multiple times, assign list to it's value
     if it's a "var" variable flag, assign dictionary to it
     if a value is None, will skip this option
-
+    
 ## Examples
 ### Have a test.tf file under folder "/home/test" 
 #### 1. apply with variables a=b, c=d, refresh=false, no color in the output
@@ -67,6 +58,19 @@ In python-terraform:
     from python_terraform import Terraform
     tf = terraform(working_dir='/home/test')
     tf.fmt(diff=True)
+
+## Implementation
+IMHO, how terraform design boolean options is confusing. 
+Take `input=True` and `-no-color` option of `apply` command for example,
+they're all boolean value but with different option type. 
+This make api caller don't have a general rule to follow but to do 
+a exhaustive method implementation which I don't prefer to.
+Therefore I end-up with using `IsFlagged` or `IsNotFlagged` as value of option 
+like `-no-color` and `True/False` value reserved for option like 
+
+
+
+
     
 
     

@@ -79,16 +79,18 @@ class TestTerraform(object):
         assert ret == 0
 
     @pytest.mark.parametrize(
-        ("folder", "variables", "var_files", "expected_output"),
+        ("folder", "variables", "var_files", "expected_output", "options"),
         [
-            ("var_to_output", {'test_var': 'test'}, None, "test_output=test"),
-            ("var_to_output", {'test_list_var': ['c', 'd']}, None, "test_list_output=[c,d]"),
-            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, None, "test_map_output={a=ab=bc=cd=d}"),
-            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, 'var_to_output/test_map_var.json', "test_map_output={a=ab=bc=cd=de=ef=f}")
+            ("var_to_output",
+             {'test_var': 'test'}, None, "test_output=test", {}),
+            ("var_to_output", {'test_list_var': ['c', 'd']}, None, "test_list_output=[c,d]", {}),
+            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, None, "test_map_output={a=ab=bc=cd=d}", {}),
+            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, 'var_to_output/test_map_var.json', "test_map_output={a=ab=bc=cd=de=ef=f}", {}),
+            ("var_to_output", {}, None, "\x1b[0m\x1b[1m\x1b[32mApplycomplete!", {"no_color": IsNotFlagged})
         ])
-    def test_apply(self, folder, variables, var_files, expected_output):
+    def test_apply(self, folder, variables, var_files, expected_output, options):
         tf = Terraform(working_dir=current_path, variables=variables, var_file=var_files)
-        ret, out, err = tf.apply(folder)
+        ret, out, err = tf.apply(folder, **options)
         assert ret == 0
         assert expected_output in out.replace('\n', '').replace(' ', '')
         assert err == ''
