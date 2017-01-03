@@ -16,7 +16,7 @@ python-terraform is a python module provide a wrapper of `terraform` command lin
     t = Terraform()
     return_code, stdout, stderr = t.<cmd_name>(*arguments, **options)
     
-####For any parameter
+####For any argument
 simply pass the string to arguments of the method, for example,
 
     terraform apply target_dir 
@@ -79,6 +79,12 @@ or
     from python_terraform import Terraform
     tf = Terraform()
     tf.apply('/home/test', no_color=IsFlagged, refresh=False, var={'a':'b', 'c':'d'})
+
+or
+
+    from python_terraform import Terraform
+    tf = Terraform(working_dir='/home/test', variables={'a':'b', 'c':'d'})
+    tf.apply(no_color=IsFlagged, refresh=False)
     
 #### 2. fmt command, diff=true
 In shell:
@@ -91,6 +97,12 @@ In python-terraform:
     from python_terraform import Terraform
     tf = terraform(working_dir='/home/test')
     tf.fmt(diff=True)
+    
+## default values
+for apply/plan/destroy command, assign with following default value to make 
+caller easier in python
+1. ```input=False```, in this case process won't hang because you missing a variable
+1. ```no_color=IsFlagged```, in this case, stdout of result is easier for parsing
 
 ## Implementation
 IMHO, how terraform design boolean options is confusing. 
@@ -99,7 +111,7 @@ they're all boolean value but with different option type.
 This make api caller don't have a general rule to follow but to do 
 a exhaustive method implementation which I don't prefer to.
 Therefore I end-up with using `IsFlagged` or `IsNotFlagged` as value of option 
-like `-no-color` and `True/False` value reserved for option like 
+like `-no-color` and `True/False` value reserved for option like `refresh=true`
 
 
 

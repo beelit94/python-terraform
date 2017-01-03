@@ -16,10 +16,6 @@ class IsFlagged:
     pass
 
 
-class IsNotFlagged:
-    pass
-
-
 class Terraform(object):
     """
     Wrapper of terraform command line tool
@@ -34,13 +30,17 @@ class Terraform(object):
                  var_file=None,
                  terraform_bin_path=None):
         """
-        :param working_dir: the folder of the working folder, if not given, will be where python
+        :param working_dir: the folder of the working folder, if not given,
+                            will be current working folder
         :param targets: list of target
-        :param state: path of state file relative to working folder
-        :param variables: variables for apply/destroy/plan command
-        :param parallelism: parallelism for apply/destroy command
-        :param var_file: passed as value of -var-file option, could be string or list
-            list stands for multiple -var-file option
+                        as default value of apply/destroy/plan command
+        :param state: path of state file relative to working folder,
+                    as a default value of apply/destroy/plan command
+        :param variables: default variables for apply/destroy/plan command,
+                        will be override by variable passing by apply/destroy/plan method
+        :param parallelism: default parallelism value for apply/destroy command
+        :param var_file: passed as value of -var-file option,
+                could be string or list, list stands for multiple -var-file option
         :param terraform_bin_path: binary path of terraform
         """
         self.working_dir = working_dir
@@ -148,14 +148,11 @@ class Terraform(object):
                 cmds += ['-{k}'.format(k=k)]
                 continue
 
-            if v is IsNotFlagged:
+            if v is None:
                 continue
 
             if type(v) is bool:
                 v = 'true' if v else 'false'
-
-            if not v:
-                continue
 
             cmds += ['-{k}={v}'.format(k=k, v=v)]
 
