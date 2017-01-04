@@ -46,6 +46,6 @@ deploy:
     tags: false
     condition: $TRAVIS_PYTHON_VERSION = "3.5"
 notifications:
-  hipchat:
-    rooms:
-      secure: y5uALNnWEpHRa1eXBGYSRt+bX0yEAtbM9+5gTttgf134wyok+XM2biYqhJVxCIBCiCAh5W2t+/Mz2p+I1BeT9letUac2NDEQSPqrKx56e40ZO1plUCllMfCbnX/JkvkY75t7gA9WFJ3M209yle9U78LqaKqcQ8++oZNJmDQx+k1tctmqQPS0Sxt5k0T2IJwASuKxRbFLUKube8lfOa6WsBgbBS153wFozpqD/9nfPpBjKJCPhILg0PsOH8YryHw0RSpU/qrRvShM86R6x+HyKmxoq40t0H7xvHqhn86u1JM/bEtG9l985Zq1Wwxh+pdPnpT39gmMSLkisFV40cSgQkt3A2Go+Y5kELTSYE0gWko+bPC9oGjiNHaxpCGwGjfI4FK5RE3LI13J+SzDC/1QSdfoqIw68s0YNwpL0lrde8hCtG/JzhCG2RBCy9P/asHs1ZQBflKjeQKgqTOpW/j3p6ZiiNzwxMUxsOCc/64aIYXwtwWSj6lLTzy+Roe6yEYXMrik8D+8WLoOEJcgKW+C3D9ZgaQOxkIkuEY4OswzzORN4Tl9tsKWiCn9gY1EY9gNXweAobQSm/TxFqXyR0fA+iIahx89IA3HPvpoavpC8B7gz3esqqIjq5zYL9WMeIpbgBegyGT8ZdvbMcpSWbquM3Zc4gFqOuO2Zbewr3UO59s=
+  email:
+    recipients:
+      - beelit94@gmail.com
