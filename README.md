@@ -101,6 +101,7 @@ In python-terraform:
 ## default values
 for apply/plan/destroy command, assign with following default value to make 
 caller easier in python
+
 1. ```input=False```, in this case process won't hang because you missing a variable
 1. ```no_color=IsFlagged```, in this case, stdout of result is easier for parsing
 
