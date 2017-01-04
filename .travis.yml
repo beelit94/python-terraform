@@ -30,6 +30,12 @@ script:
   - "export PATH=$PATH:$PWD/tf_bin"
   - tox
 
+branches:
+  only:
+    - master
+    - develop
+    - release/**
+
 deploy:
   # test pypi
   - provider: pypi

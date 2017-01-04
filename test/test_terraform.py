@@ -32,7 +32,8 @@ CMD_CASES = [
     ]
 ]
 
-@pytest.fixture()
+
+@pytest.fixture(scope='function')
 def fmt_test_file(request):
     target = os.path.join(current_path, 'bad_fmt', 'test.backup')
     orgin = os.path.join(current_path, 'bad_fmt', 'test.tf')
@@ -79,16 +80,18 @@ class TestTerraform(object):
         assert ret == 0
 
     @pytest.mark.parametrize(
-        ("folder", "variables", "var_files", "expected_output"),
+        ("folder", "variables", "var_files", "expected_output", "options"),
         [
-            ("var_to_output", {'test_var': 'test'}, None, "test_output=test"),
-            ("var_to_output", {'test_list_var': ['c', 'd']}, None, "test_list_output=[c,d]"),
-            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, None, "test_map_output={a=ab=bc=cd=d}"),
-            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, 'var_to_output/test_map_var.json', "test_map_output={a=ab=bc=cd=de=ef=f}")
+            ("var_to_output",
+             {'test_var': 'test'}, None, "test_output=test", {}),
+            ("var_to_output", {'test_list_var': ['c', 'd']}, None, "test_list_output=[c,d]", {}),
+            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, None, "test_map_output={a=ab=bc=cd=d}", {}),
+            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, 'var_to_output/test_map_var.json', "test_map_output={a=ab=bc=cd=de=ef=f}", {}),
+            ("var_to_output", {}, None, "\x1b[0m\x1b[1m\x1b[32mApplycomplete!", {"no_color": IsNotFlagged})
         ])
-    def test_apply(self, folder, variables, var_files, expected_output):
+    def test_apply(self, folder, variables, var_files, expected_output, options):
         tf = Terraform(working_dir=current_path, variables=variables, var_file=var_files)
-        ret, out, err = tf.apply(folder)
+        ret, out, err = tf.apply(folder, **options)
         assert ret == 0
         assert expected_output in out.replace('\n', '').replace(' ', '')
         assert err == ''
@@ -129,6 +132,8 @@ class TestTerraform(object):
                                  no_color=IsNotFlagged)
         out = out.replace('\n', '')
         assert '\x1b[0m\x1b[1m\x1b[32mApply' in out
+        out = tf.output('test_output')
+        assert 'test2' in out
 
     def test_get_output(self):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
@@ -141,7 +146,18 @@ class TestTerraform(object):
         assert ret == 0
         assert 'Destroy complete! Resources: 0 destroyed.' in out
 
-    def test_fmt(self):
+    @pytest.mark.parametrize(
+        ("plan", "variables", "expected_ret"),
+        [
+            ('vars_require_input', {}, 1)
+        ]
+    )
+    def test_plan(self, plan, variables, expected_ret):
+        tf = Terraform(working_dir=current_path, variables=variables)
+        ret, out, err = tf.plan(plan)
+        assert ret == expected_ret
+
+    def test_fmt(self, fmt_test_file):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         ret, out, err = tf.fmt(diff=True)
         assert ret == 0

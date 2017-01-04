@@ -2,7 +2,6 @@
 This is a python module provide a wrapper of terraform command line tool
 """
 from setuptools import setup
-import os
 
 dependencies = []
 module_name = 'python-terraform'
@@ -16,19 +15,9 @@ except IOError:
     long_description = short_description
 
 
-def get_version():
-    p = os.path.join(os.path.dirname(
-        os.path.abspath(__file__)), "VERSION")
-    with open(p) as f:
-        version = f.read()
-        version = version.strip()
-        if not version:
-            raise ValueError("could not read version")
-        return version
-
 setup(
     name=module_name,
-    version=get_version(),
+    version='0.8.1',
     url='https://github.com/beelit94/python-terraform',
     license='MIT',
     author='Freddy Tan',

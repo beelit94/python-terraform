@@ -34,13 +34,17 @@ class Terraform(object):
                  var_file=None,
                  terraform_bin_path=None):
         """
-        :param working_dir: the folder of the working folder, if not given, will be where python
+        :param working_dir: the folder of the working folder, if not given,
+                            will be current working folder
         :param targets: list of target
-        :param state: path of state file relative to working folder
-        :param variables: variables for apply/destroy/plan command
-        :param parallelism: parallelism for apply/destroy command
-        :param var_file: passed as value of -var-file option, could be string or list
-            list stands for multiple -var-file option
+                        as default value of apply/destroy/plan command
+        :param state: path of state file relative to working folder,
+                    as a default value of apply/destroy/plan command
+        :param variables: default variables for apply/destroy/plan command,
+                        will be override by variable passing by apply/destroy/plan method
+        :param parallelism: default parallelism value for apply/destroy command
+        :param var_file: passed as value of -var-file option,
+                could be string or list, list stands for multiple -var-file option
         :param terraform_bin_path: binary path of terraform
         """
         self.working_dir = working_dir
@@ -64,21 +68,28 @@ class Terraform(object):
 
         return wrapper
 
-    def apply(self, dir_or_plan=None, **kwargs):
+    def apply(self, dir_or_plan=None, input=False, no_color=IsFlagged, **kwargs):
         """
         refer to https://terraform.io/docs/commands/apply.html
         no-color is flagged by default
+        :param no_color: disable color of stdout
+        :param input: disable prompt for a missing variable
         :param dir_or_plan: folder relative to working folder
         :param kwargs: same as kwags in method 'cmd'
         :returns return_code, stdout, stderr
         """
-        default = dict()
-        args, option_dict = self._create_cmd_args(dir_or_plan, default, kwargs)
-
+        default = kwargs
+        default['input'] = input
+        default['no_color'] = no_color
+        option_dict = self._generate_default_options(default)
+        args = self._generate_default_args(dir_or_plan)
         return self.cmd('apply', *args, **option_dict)
 
-    def _create_cmd_args(self, dir_or_plan, default_dict, kwargs):
-        option_dict = default_dict
+    def _generate_default_args(self, dir_or_plan):
+        return [dir_or_plan] if dir_or_plan else []
+
+    def _generate_default_options(self, input_options):
+        option_dict = dict()
         option_dict['state'] = self.state
         option_dict['target'] = self.targets
         option_dict['var'] = self.variables
@@ -86,19 +97,34 @@ class Terraform(object):
         option_dict['parallelism'] = self.parallelism
         option_dict['no_color'] = IsFlagged
         option_dict['input'] = False
-        option_dict.update(kwargs)
-        args = [dir_or_plan] if dir_or_plan else []
-        return args, option_dict
+        option_dict.update(input_options)
+        return option_dict
 
-    def destroy(self, dir_or_plan=None, **kwargs):
+    def destroy(self, dir_or_plan=None, force=IsFlagged, **kwargs):
         """
         refer to https://www.terraform.io/docs/commands/destroy.html
         force/no-color option is flagged by default
         :return: ret_code, stdout, stderr
         """
-        default = {'force': IsFlagged}
-        args, option_dict = self._create_cmd_args(dir_or_plan, default, kwargs)
-        return self.cmd('destroy', *args, **option_dict)
+        default = kwargs
+        default['force'] = force
+        options = self._generate_default_options(default)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd('destroy', *args, **options)
+
+    def plan(self, dir_or_plan=None, detailed_exitcode=IsFlagged, **kwargs):
+        """
+        refert to https://www.terraform.io/docs/commands/plan.html
+        :param detailed_exitcode: Return a detailed exit code when the command exits.
+        :param dir_or_plan: relative path to plan/folder
+        :param kwargs: options
+        :return: ret_code, stdout, stderr
+        """
+        options = kwargs
+        options['detailed_exitcode'] = detailed_exitcode
+        options = self._generate_default_options(options)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd('plan', *args, **options)
 
     def generate_cmd_string(self, cmd, *args, **kwargs):
         """
@@ -149,14 +175,11 @@ class Terraform(object):
                 cmds += ['-{k}'.format(k=k)]
                 continue
 
-            if v is IsNotFlagged:
+            if v is None or v is IsNotFlagged:
                 continue
 
             if type(v) is bool:
                 v = 'true' if v else 'false'
-
-            if not v:
-                continue
 
             cmds += ['-{k}={v}'.format(k=k, v=v)]
 
