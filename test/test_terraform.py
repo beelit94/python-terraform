@@ -32,7 +32,8 @@ CMD_CASES = [
     ]
 ]
 
-@pytest.fixture()
+
+@pytest.fixture(scope='function')
 def fmt_test_file(request):
     target = os.path.join(current_path, 'bad_fmt', 'test.backup')
     orgin = os.path.join(current_path, 'bad_fmt', 'test.tf')
@@ -131,6 +132,8 @@ class TestTerraform(object):
                                  no_color=IsNotFlagged)
         out = out.replace('\n', '')
         assert '\x1b[0m\x1b[1m\x1b[32mApply' in out
+        out = tf.output('test_output')
+        assert 'test2' in out
 
     def test_get_output(self):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
@@ -143,7 +146,18 @@ class TestTerraform(object):
         assert ret == 0
         assert 'Destroy complete! Resources: 0 destroyed.' in out
 
-    def test_fmt(self):
+    @pytest.mark.parametrize(
+        ("plan", "variables", "expected_ret"),
+        [
+            ('vars_require_input', {}, 1)
+        ]
+    )
+    def test_plan(self, plan, variables, expected_ret):
+        tf = Terraform(working_dir=current_path, variables=variables)
+        ret, out, err = tf.plan(plan)
+        assert ret == expected_ret
+
+    def test_fmt(self, fmt_test_file):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         ret, out, err = tf.fmt(diff=True)
         assert ret == 0

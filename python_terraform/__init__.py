@@ -108,9 +108,23 @@ class Terraform(object):
         """
         default = kwargs
         default['force'] = force
-        option_dict = self._generate_default_options(default)
+        options = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
-        return self.cmd('destroy', *args, **option_dict)
+        return self.cmd('destroy', *args, **options)
+
+    def plan(self, dir_or_plan=None, detailed_exitcode=IsFlagged, **kwargs):
+        """
+        refert to https://www.terraform.io/docs/commands/plan.html
+        :param detailed_exitcode: Return a detailed exit code when the command exits.
+        :param dir_or_plan: relative path to plan/folder
+        :param kwargs: options
+        :return: ret_code, stdout, stderr
+        """
+        options = kwargs
+        options['detailed_exitcode'] = detailed_exitcode
+        options = self._generate_default_options(options)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd('plan', *args, **options)
 
     def generate_cmd_string(self, cmd, *args, **kwargs):
         """
