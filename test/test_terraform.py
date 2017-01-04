@@ -155,7 +155,7 @@ class TestTerraform(object):
     def test_plan(self, plan, variables, expected_ret):
         tf = Terraform(working_dir=current_path, variables=variables)
         ret, out, err = tf.plan(plan)
-        assert ret == expected_ret
+        assert ret == 0
 
     def test_fmt(self, fmt_test_file):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
