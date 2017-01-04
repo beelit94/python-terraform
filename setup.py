@@ -1,7 +1,10 @@
 """
 This is a python module provide a wrapper of terraform command line tool
 """
-from setuptools import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 dependencies = []
 module_name = 'python-terraform'
