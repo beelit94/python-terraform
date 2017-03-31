@@ -3,6 +3,7 @@
 
 import subprocess
 import os
+import sys
 import json
 import logging
 import tempfile
@@ -202,15 +203,27 @@ class Terraform(object):
                 if it's a flag could be used multiple times, assign list to it's value
                 if it's a "var" variable flag, assign dictionary to it
                 if a value is None, will skip this option
+                if the option 'capture_output' is passed (with any value other than
+                    True), terraform output will be printed to stdout/stderr and
+                    "None" will be returned as out and err.
         :return: ret_code, out, err
         """
+
+        capture_output = kwargs.pop('capture_output', True)
+        if capture_output is True:
+            stderr = subprocess.PIPE
+            stdout = subprocess.PIPE
+        else:
+            stderr = sys.stderr
+            stdout = sys.stdout
+
         cmd_string = self.generate_cmd_string(cmd, *args, **kwargs)
         log.debug('command: {c}'.format(c=cmd_string))
 
         working_folder = self.working_dir if self.working_dir else None
 
-        p = subprocess.Popen(cmd_string, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, shell=True,
+        p = subprocess.Popen(cmd_string, stdout=stdout,
+                             stderr=stderr, shell=True,
                              cwd=working_folder)
         out, err = p.communicate()
         ret_code = p.returncode
@@ -222,7 +235,10 @@ class Terraform(object):
             log.warn('error: {e}'.format(e=err))
 
         self.temp_var_files.clean_up()
-        return ret_code, out.decode('utf-8'), err.decode('utf-8')
+        if capture_output is True:
+            return ret_code, out.decode('utf-8'), err.decode('utf-8')
+        else:
+            return ret_code, None, None
 
     def output(self, name):
         """
