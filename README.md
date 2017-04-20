@@ -97,6 +97,16 @@ In python-terraform:
     from python_terraform import Terraform
     tf = terraform(working_dir='/home/test')
     tf.fmt(diff=True)
+
+# Terraform Output
+
+By default, stdout and stderr are captured and returned. This causes the application to appear to hang. To print terraform output in real time, provide the `capture_output` option with any value other than `None`. This will cause the output of terraform to be printed to the terminal in real time. The value of `stdout` and `stderr` below will be `None`.
+
+
+    from python_terraform import Terraform
+    t = Terraform()
+    return_code, stdout, stderr = t.<cmd_name>(capture_output=False)
+
     
 ## default values
 for apply/plan/destroy command, assign with following default value to make 
