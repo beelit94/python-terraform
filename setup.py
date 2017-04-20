@@ -20,7 +20,7 @@ except IOError:
 
 setup(
     name=module_name,
-    version='0.8.2',
+    version='0.8.4',
     url='https://github.com/beelit94/python-terraform',
     license='MIT',
     author='Freddy Tan',
