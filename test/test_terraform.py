@@ -195,7 +195,7 @@ class TestTerraform(object):
         assert ret == 0
 
     def test_import(self, string_logger):
-        tf = Terraform(working_dir=os.path.join(current_path, 'import_test'))
+        tf = Terraform(working_dir=current_path)
         tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
         logs = string_logger.getvalue()
         print(logs)
