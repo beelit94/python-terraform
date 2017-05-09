@@ -6,6 +6,8 @@ import re
 import shutil
 
 logging.basicConfig(level=logging.DEBUG)
+ch = logging.StreamHandler(sys.stdout)
+logging.getLogger().addHandler(ch)
 current_path = os.path.dirname(os.path.realpath(__file__))
 
 STRING_CASES = [
@@ -23,11 +25,18 @@ STRING_CASES = [
  ]
 
 CMD_CASES = [
-    ['method', 'expected_output'],
+    ['method', 'expected_output', 'expected_ret_code'],
     [
         [
             lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}) ,
-            "doesn't need to do anything"
+            "doesn't need to do anything",
+            0
+        ],
+        # try import aws instance
+        [
+            lambda x: x.cmd('import', 'aws_instance.foo', 'i-abcd1234', no_color=IsFlagged),
+            'Import complete!',
+            1
         ]
     ]
 ]
@@ -73,11 +82,11 @@ class TestTerraform(object):
             assert s in result
 
     @pytest.mark.parametrize(*CMD_CASES)
-    def test_cmd(self, method, expected_output):
+    def test_cmd(self, method, expected_output, expected_ret_code):
         tf = Terraform(working_dir=current_path)
         ret, out, err = method(tf)
         assert expected_output in out
-        assert ret == 0
+        assert expected_ret_code == ret
 
     @pytest.mark.parametrize(
         ("folder", "variables", "var_files", "expected_output", "options"),
@@ -161,3 +170,8 @@ class TestTerraform(object):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         ret, out, err = tf.fmt(diff=True)
         assert ret == 0
+
+    def test_import(self):
+        tf = Terraform(working_dir=current_path)
+        tf.cmd('import', 'aws_instance.foo', 'i-abc123')
+        assert False
