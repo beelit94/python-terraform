@@ -64,8 +64,11 @@ class Terraform(object):
 
     def __getattr__(self, item):
         def wrapper(*args, **kwargs):
+            cmd_name = str(item)
+            if cmd_name.endswith('_cmd'):
+                cmd_name = cmd_name[:-4]
             logging.debug('called with %r and %r' % (args, kwargs))
-            return self.cmd(item, *args, **kwargs)
+            return self.cmd(cmd_name, *args, **kwargs)
 
         return wrapper
 

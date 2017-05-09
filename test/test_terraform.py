@@ -173,5 +173,6 @@ class TestTerraform(object):
 
     def test_import(self):
         tf = Terraform(working_dir=current_path)
-        tf.cmd('import', 'aws_instance.foo', 'i-abc123')
-        assert False
+        ret, out, err = tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
+        assert 'Import complete!' in out
+        assert 1 == ret

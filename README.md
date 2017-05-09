@@ -16,11 +16,12 @@ python-terraform is a python module provide a wrapper of `terraform` command lin
     t = Terraform()
     return_code, stdout, stderr = t.<cmd_name>(*arguments, **options)
 
-**Note**: method name same as reserved keyword like `import` could be called directly by using the following
+**Note**: method name same as reserved keyword like `import` could be called directly
+by adding `_cmd` after command name
 
     from python_terraform import Terraform
     t = Terraform()
-    return_code, stdout, stderr = t.<cmd_name>_method(*arguments, **options)
+    return_code, stdout, stderr = t.<cmd_name>_cmd(*arguments, **options)
 
 or just call cmd method directly
 
