@@ -83,6 +83,7 @@ class TestTerraform(object):
 
     @pytest.mark.parametrize(*CMD_CASES)
     def test_cmd(self, method, expected_output, expected_ret_code):
+        os.environ['AWS_DEFAULT_REGION'] = "us-west-1"
         tf = Terraform(working_dir=current_path)
         ret, out, err = method(tf)
         assert expected_output in out
@@ -172,6 +173,7 @@ class TestTerraform(object):
         assert ret == 0
 
     def test_import(self):
+        os.environ['AWS_DEFAULT_REGION'] = "us-west-1"
         tf = Terraform(working_dir=current_path)
         ret, out, err = tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
         assert 'Import complete!' in out
