@@ -10,13 +10,27 @@ python-terraform is a python module provide a wrapper of `terraform` command lin
     pip install python-terraform
     
 ## Usage
-####For any terraform command
+#### For any terraform command
 
     from python_terraform import Terraform
     t = Terraform()
     return_code, stdout, stderr = t.<cmd_name>(*arguments, **options)
+
+**Note**: method name same as reserved keyword like `import` won't be accepted by python interpreter,
+to be able to call the method, you could call cmd_name by adding `_cmd` after command name, for example,
+`import` here could be called by
+
+    from python_terraform import Terraform
+    t = Terraform()
+    return_code, stdout, stderr = t.import_cmd(*arguments, **options)
+
+or just call cmd method directly
+
+    from python_terraform import Terraform
+    t = Terraform()
+    return_code, stdout, stderr = t.cmd(<cmd_name>, *arguments, **options)
     
-####For any argument
+#### For any argument
 simply pass the string to arguments of the method, for example,
 
     terraform apply target_dir 
@@ -24,7 +38,7 @@ simply pass the string to arguments of the method, for example,
     terraform import aws_instance.foo i-abcd1234 
         --> <instance>.import('aws_instance.foo', 'i-abcd1234')
 
-####For any options
+#### For any options
     
 * dash to underscore
 

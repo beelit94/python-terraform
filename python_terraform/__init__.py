@@ -33,8 +33,9 @@ class Terraform(object):
                  variables=None,
                  parallelism=None,
                  var_file=None,
-                 terraform_bin_path=None):
-        """
+                 terraform_bin_path=None,
+                 is_env_vars_included=True):
+        """        
         :param working_dir: the folder of the working folder, if not given,
                             will be current working folder
         :param targets: list of target
@@ -47,7 +48,10 @@ class Terraform(object):
         :param var_file: passed as value of -var-file option,
                 could be string or list, list stands for multiple -var-file option
         :param terraform_bin_path: binary path of terraform
+        :type is_env_vars_included: bool
+        :param is_env_vars_included: included env variables when calling terraform cmd 
         """
+        self.is_env_vars_included = is_env_vars_included
         self.working_dir = working_dir
         self.state = state
         self.targets = [] if targets is None else targets
@@ -64,8 +68,11 @@ class Terraform(object):
 
     def __getattr__(self, item):
         def wrapper(*args, **kwargs):
+            cmd_name = str(item)
+            if cmd_name.endswith('_cmd'):
+                cmd_name = cmd_name[:-4]
             logging.debug('called with %r and %r' % (args, kwargs))
-            return self.cmd(item, *args, **kwargs)
+            return self.cmd(cmd_name, *args, **kwargs)
 
         return wrapper
 
@@ -222,9 +229,12 @@ class Terraform(object):
 
         working_folder = self.working_dir if self.working_dir else None
 
-        p = subprocess.Popen(cmd_string, stdout=stdout,
-                             stderr=stderr, shell=True,
-                             cwd=working_folder)
+        environ_vars = {}
+        if self.is_env_vars_included:
+            environ_vars = os.environ.copy()
+
+        p = subprocess.Popen(cmd_string, stdout=stdout, stderr=stderr, shell=True,
+                             cwd=working_folder, env=environ_vars)
         out, err = p.communicate()
         ret_code = p.returncode
         log.debug('output: {o}'.format(o=out))
