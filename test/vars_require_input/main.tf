@@ -10,7 +10,7 @@ variable "list" {
 
 variable "map" {
   default = {}
-  type = "map"
+  type    = "map"
 }
 
 resource "aws_instance" "bar" {
