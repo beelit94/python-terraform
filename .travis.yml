@@ -2,9 +2,10 @@ language: python
 python:
 - '2.7'
 - '3.5'
+- '3.6'
 before_install: sudo apt-get install unzip
 before_script:
-  - export TFVER=0.8.1
+  - export TFVER=0.9.5
   - export TFURL=https://releases.hashicorp.com/terraform/
   - TFURL+=$TFVER
   - TFURL+="/terraform_"
