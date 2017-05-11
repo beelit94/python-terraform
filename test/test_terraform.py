@@ -1,3 +1,7 @@
+try:
+    from cStringIO import StringIO      # Python 2
+except ImportError:
+    from io import StringIO
 from python_terraform import *
 import pytest
 import os
@@ -6,6 +10,9 @@ import re
 import shutil
 
 logging.basicConfig(level=logging.DEBUG)
+root_logger = logging.getLogger()
+# ch = logging.StreamHandler(sys.stdout)
+# root_logger.addHandler(ch)
 current_path = os.path.dirname(os.path.realpath(__file__))
 
 STRING_CASES = [
@@ -23,11 +30,20 @@ STRING_CASES = [
  ]
 
 CMD_CASES = [
-    ['method', 'expected_output'],
+    ['method', 'expected_output', 'expected_ret_code', 'expected_logs'],
     [
         [
             lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}) ,
-            "doesn't need to do anything"
+            "doesn't need to do anything",
+            0,
+            ''
+        ],
+        # try import aws instance
+        [
+            lambda x: x.cmd('import', 'aws_instance.foo', 'i-abcd1234', no_color=IsFlagged),
+            '',
+            1,
+            'command: terraform import -no-color aws_instance.foo i-abcd1234'
         ]
     ]
 ]
@@ -45,6 +61,19 @@ def fmt_test_file(request):
 
     request.addfinalizer(td)
     return
+
+
+@pytest.fixture()
+def string_logger(request):
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    root_logger.addHandler(handler)
+
+    def td():
+        root_logger.removeHandler(handler)
+
+    request.addfinalizer(td)
+    return log_stream
 
 
 class TestTerraform(object):
@@ -73,11 +102,14 @@ class TestTerraform(object):
             assert s in result
 
     @pytest.mark.parametrize(*CMD_CASES)
-    def test_cmd(self, method, expected_output):
+    def test_cmd(self, method, expected_output, expected_ret_code, expected_logs, string_logger):
         tf = Terraform(working_dir=current_path)
         ret, out, err = method(tf)
+        logs = str(string_logger.getvalue())
+        logs = logs.replace('\n', '')
         assert expected_output in out
-        assert ret == 0
+        assert expected_ret_code == ret
+        assert expected_logs in logs
 
     @pytest.mark.parametrize(
         ("folder", "variables", "var_files", "expected_output", "options"),
@@ -161,3 +193,10 @@ class TestTerraform(object):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         ret, out, err = tf.fmt(diff=True)
         assert ret == 0
+
+    def test_import(self, string_logger):
+        tf = Terraform(working_dir=current_path)
+        tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
+        logs = string_logger.getvalue()
+        print(logs)
+        assert 'command: terraform import -no-color aws_instance.foo i-abc1234' in logs
