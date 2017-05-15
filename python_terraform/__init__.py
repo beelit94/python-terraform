@@ -294,8 +294,9 @@ class VariableFiles(object):
 
     def create(self, variables):
         with tempfile.NamedTemporaryFile('w+t', delete=False) as temp:
-            logging.debug('{0} is created'.format(temp.name))
+            log.debug('{0} is created'.format(temp.name))
             self.files.append(temp)
+            log.debug('variables wrote to tempfile: {0}'.format(str(variables)))
             temp.write(json.dumps(variables))
             file_name = temp.name
 

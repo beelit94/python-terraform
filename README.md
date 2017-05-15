@@ -12,7 +12,7 @@ python-terraform is a python module provide a wrapper of `terraform` command lin
 ## Usage
 #### For any terraform command
 
-    from python_terraform import Terraform
+    from python_terraform import *
     t = Terraform()
     return_code, stdout, stderr = t.<cmd_name>(*arguments, **options)
 
@@ -20,13 +20,13 @@ python-terraform is a python module provide a wrapper of `terraform` command lin
 to be able to call the method, you could call cmd_name by adding `_cmd` after command name, for example,
 `import` here could be called by
 
-    from python_terraform import Terraform
+    from python_terraform import *
     t = Terraform()
     return_code, stdout, stderr = t.import_cmd(*arguments, **options)
 
 or just call cmd method directly
 
-    from python_terraform import Terraform
+    from python_terraform import *
     t = Terraform()
     return_code, stdout, stderr = t.cmd(<cmd_name>, *arguments, **options)
     
@@ -93,19 +93,19 @@ In shell:
     
 In python-terraform:
 
-    from python_terraform import Terraform
+    from python_terraform import *
     tf = Terraform(working_dir='/home/test')
     tf.apply(no_color=IsFlagged, refresh=False, var={'a':'b', 'c':'d'})
     
 or
 
-    from python_terraform import Terraform
+    from python_terraform import *
     tf = Terraform()
     tf.apply('/home/test', no_color=IsFlagged, refresh=False, var={'a':'b', 'c':'d'})
 
 or
 
-    from python_terraform import Terraform
+    from python_terraform import *
     tf = Terraform(working_dir='/home/test', variables={'a':'b', 'c':'d'})
     tf.apply(no_color=IsFlagged, refresh=False)
     
@@ -117,7 +117,7 @@ In shell:
     
 In python-terraform:
     
-    from python_terraform import Terraform
+    from python_terraform import *
     tf = terraform(working_dir='/home/test')
     tf.fmt(diff=True)
 
