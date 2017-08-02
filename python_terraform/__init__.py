@@ -250,15 +250,12 @@ class Terraform(object):
         else:
             return ret_code, None, None
 
-    def output(self, name, dir_or_plan=None, **kwargs):
+    def output(self, name, *args, **kwargs):
         """
         https://www.terraform.io/docs/commands/output.html
         :param name: name of output
         :return: output value
         """
-        options = kwargs
-        options = self._generate_default_options(options)
-        args = self._generate_default_args(dir_or_plan)
 
         ret, out, err = self.cmd(
             'output', name, json=IsFlagged, *args, **options)
