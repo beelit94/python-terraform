@@ -250,7 +250,7 @@ class Terraform(object):
         else:
             return ret_code, None, None
 
-    def output(self, name, **kwargs):
+    def output(self, name, dir_or_plan=None, **kwargs):
         """
         https://www.terraform.io/docs/commands/output.html
         :param name: name of output
