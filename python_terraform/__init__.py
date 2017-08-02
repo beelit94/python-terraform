@@ -258,7 +258,7 @@ class Terraform(object):
         """
 
         ret, out, err = self.cmd(
-            'output', name, json=IsFlagged, *args, **options)
+            'output', name, json=IsFlagged, *args, **kwargs)
 
         log.debug('output raw string: {0}'.format(out))
         if ret != 0:
