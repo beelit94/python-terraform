@@ -257,7 +257,6 @@ class Terraform(object):
         :return: output value
         """
         options = kwargs
-        options['detailed_exitcode'] = detailed_exitcode
         options = self._generate_default_options(options)
         args = self._generate_default_args(dir_or_plan)
 
