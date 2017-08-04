@@ -8,7 +8,7 @@ import os
 import logging
 import re
 import shutil
-from itertools import combinations
+import fnmatch
 
 logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
@@ -83,12 +83,21 @@ class TestTerraform(object):
         """
 
         def purge(dir, pattern):
-            for f in os.listdir(dir):
-                if re.search(pattern, f):
-                    if os.path.isfile(f):
-                        os.remove(os.path.join(dir, f))
+            # for f in os.listdir(dir):
+            #     # if re.search(pattern, f):
+            #     glob.glob()
+            #         if os.path.isfile(f):
+            #             os.remove(os.path.join(dir, f))
+            for root, dirnames, filenames in os.walk(dir):
+                for filename in fnmatch.filter(filenames, pattern):
+                    f = os.path.join(root, filename)
+                    os.remove(f)
+                for dirname in fnmatch.filter(dirnames, pattern):
+                    d = os.path.join(root, dirname)
+                    shutil.rmtree(d)
 
-        purge('.', '.tfstate')
+        purge('.', '*.tfstate')
+        purge('.', '*.terraform')
 
     @pytest.mark.parametrize([
                  "method", "expected"
