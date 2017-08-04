@@ -71,9 +71,10 @@ def string_logger(request):
 
     def td():
         root_logger.removeHandler(handler)
+        log_stream.close()
 
     request.addfinalizer(td)
-    return log_stream
+    return lambda: str(log_stream.getvalue())
 
 
 class TestTerraform(object):
@@ -105,7 +106,7 @@ class TestTerraform(object):
     def test_cmd(self, method, expected_output, expected_ret_code, expected_logs, string_logger):
         tf = Terraform(working_dir=current_path)
         ret, out, err = method(tf)
-        logs = str(string_logger.getvalue())
+        logs = string_logger()
         logs = logs.replace('\n', '')
         assert expected_output in out
         assert expected_ret_code == ret
@@ -167,10 +168,22 @@ class TestTerraform(object):
         out = tf.output('test_output')
         assert 'test2' in out
 
-    def test_get_output(self):
+    @pytest.mark.parametrize(
+        ("param", "param_str"),
+        [
+            ({}, ""),
+            ({'module': 'test2'}, "-module=test2"),
+            ({'module': 'test2', 'no_color': IsFlagged}, "-no-color -module=test2")
+        ]
+    )
+    def test_output(self, param, param_str, string_logger):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         tf.apply('var_to_output')
-        assert tf.output('test_output') == 'test'
+        result = tf.output('test_output', **param)
+        if param:
+            assert 'terraform output -json {0} test_output'.format(param_str) in string_logger()
+        else:
+            assert result == 'test'
 
     def test_destroy(self):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
@@ -197,6 +210,4 @@ class TestTerraform(object):
     def test_import(self, string_logger):
         tf = Terraform(working_dir=current_path)
         tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
-        logs = string_logger.getvalue()
-        print(logs)
-        assert 'command: terraform import -no-color aws_instance.foo i-abc1234' in logs
+        assert 'command: terraform import -no-color aws_instance.foo i-abc1234' in string_logger()
