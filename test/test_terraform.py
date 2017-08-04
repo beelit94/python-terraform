@@ -8,11 +8,10 @@ import os
 import logging
 import re
 import shutil
+from itertools import combinations
 
 logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
-# ch = logging.StreamHandler(sys.stdout)
-# root_logger.addHandler(ch)
 current_path = os.path.dirname(os.path.realpath(__file__))
 
 STRING_CASES = [
@@ -169,19 +168,20 @@ class TestTerraform(object):
         assert 'test2' in out
 
     @pytest.mark.parametrize(
-        ("param", "param_str"),
+        ("param"),
         [
-            ({}, ""),
-            ({'module': 'test2'}, "-module=test2"),
-            ({'module': 'test2', 'no_color': IsFlagged}, "-no-color -module=test2")
+            ({}),
+            ({'module': 'test2'}),
         ]
     )
-    def test_output(self, param, param_str, string_logger):
+    def test_output(self, param, string_logger):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
         tf.apply('var_to_output')
         result = tf.output('test_output', **param)
+        regex = re.compile('terraform output (-module=test2 -json|-json -module=test2) test_output')
+        log_str = string_logger()
         if param:
-            assert 'terraform output -json {0} test_output'.format(param_str) in string_logger()
+            assert re.search(regex, log_str), log_str
         else:
             assert result == 'test'
 
