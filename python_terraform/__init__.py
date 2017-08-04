@@ -35,7 +35,7 @@ class Terraform(object):
                  var_file=None,
                  terraform_bin_path=None,
                  is_env_vars_included=True):
-        """        
+        """
         :param working_dir: the folder of the working folder, if not given,
                             will be current working folder
         :param targets: list of target
@@ -49,7 +49,7 @@ class Terraform(object):
                 could be string or list, list stands for multiple -var-file option
         :param terraform_bin_path: binary path of terraform
         :type is_env_vars_included: bool
-        :param is_env_vars_included: included env variables when calling terraform cmd 
+        :param is_env_vars_included: included env variables when calling terraform cmd
         """
         self.is_env_vars_included = is_env_vars_included
         self.working_dir = working_dir
@@ -250,13 +250,15 @@ class Terraform(object):
         else:
             return ret_code, None, None
 
-    def output(self, name):
+    def output(self, name, *args, **kwargs):
         """
         https://www.terraform.io/docs/commands/output.html
         :param name: name of output
         :return: output value
         """
-        ret, out, err = self.cmd('output', name, json=IsFlagged)
+
+        ret, out, err = self.cmd(
+            'output', name, json=IsFlagged, *args, **kwargs)
 
         log.debug('output raw string: {0}'.format(out))
         if ret != 0:

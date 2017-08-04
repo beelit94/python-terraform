@@ -8,11 +8,10 @@ import os
 import logging
 import re
 import shutil
+import fnmatch
 
 logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
-# ch = logging.StreamHandler(sys.stdout)
-# root_logger.addHandler(ch)
 current_path = os.path.dirname(os.path.realpath(__file__))
 
 STRING_CASES = [
@@ -30,20 +29,22 @@ STRING_CASES = [
  ]
 
 CMD_CASES = [
-    ['method', 'expected_output', 'expected_ret_code', 'expected_logs'],
+    ['method', 'expected_output', 'expected_ret_code', 'expected_logs', 'folder'],
     [
         [
             lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}) ,
             "doesn't need to do anything",
             0,
-            ''
+            '',
+            'var_to_output'
         ],
         # try import aws instance
         [
             lambda x: x.cmd('import', 'aws_instance.foo', 'i-abcd1234', no_color=IsFlagged),
             '',
             1,
-            'command: terraform import -no-color aws_instance.foo i-abcd1234'
+            'command: terraform import -no-color aws_instance.foo i-abcd1234',
+            ''
         ]
     ]
 ]
@@ -71,9 +72,10 @@ def string_logger(request):
 
     def td():
         root_logger.removeHandler(handler)
+        log_stream.close()
 
     request.addfinalizer(td)
-    return log_stream
+    return lambda: str(log_stream.getvalue())
 
 
 class TestTerraform(object):
@@ -83,12 +85,16 @@ class TestTerraform(object):
         """
 
         def purge(dir, pattern):
-            for f in os.listdir(dir):
-                if re.search(pattern, f):
-                    if os.path.isfile(f):
-                        os.remove(os.path.join(dir, f))
+            for root, dirnames, filenames in os.walk(dir):
+                for filename in fnmatch.filter(filenames, pattern):
+                    f = os.path.join(root, filename)
+                    os.remove(f)
+                for dirname in fnmatch.filter(dirnames, pattern):
+                    d = os.path.join(root, dirname)
+                    shutil.rmtree(d)
 
-        purge('.', '.tfstate')
+        purge('.', '*.tfstate')
+        purge('.', '*.terraform')
 
     @pytest.mark.parametrize([
                  "method", "expected"
@@ -102,10 +108,11 @@ class TestTerraform(object):
             assert s in result
 
     @pytest.mark.parametrize(*CMD_CASES)
-    def test_cmd(self, method, expected_output, expected_ret_code, expected_logs, string_logger):
+    def test_cmd(self, method, expected_output, expected_ret_code, expected_logs, string_logger, folder):
         tf = Terraform(working_dir=current_path)
+        tf.init(folder)
         ret, out, err = method(tf)
-        logs = str(string_logger.getvalue())
+        logs = string_logger()
         logs = logs.replace('\n', '')
         assert expected_output in out
         assert expected_ret_code == ret
@@ -123,6 +130,8 @@ class TestTerraform(object):
         ])
     def test_apply(self, folder, variables, var_files, expected_output, options):
         tf = Terraform(working_dir=current_path, variables=variables, var_file=var_files)
+        # after 0.10.0 we always need to init
+        tf.init(folder)
         ret, out, err = tf.apply(folder, **options)
         assert ret == 0
         assert expected_output in out.replace('\n', '').replace(' ', '')
@@ -160,6 +169,7 @@ class TestTerraform(object):
     )
     def test_override_default(self, folder, variables):
         tf = Terraform(working_dir=current_path, variables=variables)
+        tf.init(folder)
         ret, out, err = tf.apply(folder, var={'test_var': 'test2'},
                                  no_color=IsNotFlagged)
         out = out.replace('\n', '')
@@ -167,13 +177,28 @@ class TestTerraform(object):
         out = tf.output('test_output')
         assert 'test2' in out
 
-    def test_get_output(self):
+    @pytest.mark.parametrize(
+        ("param"),
+        [
+            ({}),
+            ({'module': 'test2'}),
+        ]
+    )
+    def test_output(self, param, string_logger):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
+        tf.init('var_to_output')
         tf.apply('var_to_output')
-        assert tf.output('test_output') == 'test'
+        result = tf.output('test_output', **param)
+        regex = re.compile('terraform output (-module=test2 -json|-json -module=test2) test_output')
+        log_str = string_logger()
+        if param:
+            assert re.search(regex, log_str), log_str
+        else:
+            assert result == 'test'
 
     def test_destroy(self):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
+        tf.init('var_to_output')
         ret, out, err = tf.destroy('var_to_output')
         assert ret == 0
         assert 'Destroy complete! Resources: 0 destroyed.' in out
@@ -197,6 +222,4 @@ class TestTerraform(object):
     def test_import(self, string_logger):
         tf = Terraform(working_dir=current_path)
         tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
-        logs = string_logger.getvalue()
-        print(logs)
-        assert 'command: terraform import -no-color aws_instance.foo i-abc1234' in logs
+        assert 'command: terraform import -no-color aws_instance.foo i-abc1234' in string_logger()
