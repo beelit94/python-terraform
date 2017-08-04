@@ -132,6 +132,8 @@ class TestTerraform(object):
         ])
     def test_apply(self, folder, variables, var_files, expected_output, options):
         tf = Terraform(working_dir=current_path, variables=variables, var_file=var_files)
+        # after 0.10.0 we always need to init
+        tf.init(folder)
         ret, out, err = tf.apply(folder, **options)
         assert ret == 0
         assert expected_output in out.replace('\n', '').replace(' ', '')
