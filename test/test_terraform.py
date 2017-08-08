@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
 current_path = os.path.dirname(os.path.realpath(__file__))
 
+FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS = "test 'test.out!"
 STRING_CASES = [
      [
          lambda x: x.generate_cmd_string('apply', 'the_folder',
@@ -45,6 +46,14 @@ CMD_CASES = [
             1,
             'command: terraform import -no-color aws_instance.foo i-abcd1234',
             ''
+        ],
+        # test with space and special character in file path
+        [
+            lambda x: x.cmd('plan', 'var_to_output', out=FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS),
+            '',
+            0,
+            '',
+            'var_to_output'
         ]
     ]
 ]
@@ -95,6 +104,7 @@ class TestTerraform(object):
 
         purge('.', '*.tfstate')
         purge('.', '*.terraform')
+        purge('.', FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS)
 
     @pytest.mark.parametrize([
                  "method", "expected"
@@ -189,7 +199,7 @@ class TestTerraform(object):
         tf.init('var_to_output')
         tf.apply('var_to_output')
         result = tf.output('test_output', **param)
-        regex = re.compile('terraform output (-module=test2 -json|-json -module=test2) test_output')
+        regex = re.compile("terraform output (-module=test2 -json|-json -module=test2) test_output")
         log_str = string_logger()
         if param:
             assert re.search(regex, log_str), log_str

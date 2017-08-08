@@ -192,8 +192,7 @@ class Terraform(object):
             cmds += ['-{k}={v}'.format(k=k, v=v)]
 
         cmds += args
-        cmd = ' '.join(cmds)
-        return cmd
+        return cmds
 
     def cmd(self, cmd, *args, **kwargs):
         """
@@ -224,8 +223,8 @@ class Terraform(object):
             stderr = sys.stderr
             stdout = sys.stdout
 
-        cmd_string = self.generate_cmd_string(cmd, *args, **kwargs)
-        log.debug('command: {c}'.format(c=cmd_string))
+        cmds = self.generate_cmd_string(cmd, *args, **kwargs)
+        log.debug('command: {c}'.format(c=' '.join(cmds)))
 
         working_folder = self.working_dir if self.working_dir else None
 
@@ -233,7 +232,7 @@ class Terraform(object):
         if self.is_env_vars_included:
             environ_vars = os.environ.copy()
 
-        p = subprocess.Popen(cmd_string, stdout=stdout, stderr=stderr, shell=True,
+        p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
                              cwd=working_folder, env=environ_vars)
         out, err = p.communicate()
         ret_code = p.returncode
