@@ -6,3 +6,5 @@
 .cache
 /.pypirc
 /.tox/
+.dropbox
+Icon
