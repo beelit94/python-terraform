@@ -35,7 +35,7 @@ class Terraform(object):
                  var_file=None,
                  terraform_bin_path=None,
                  is_env_vars_included=True):
-        """        
+        """
         :param working_dir: the folder of the working folder, if not given,
                             will be current working folder
         :param targets: list of target
@@ -49,7 +49,7 @@ class Terraform(object):
                 could be string or list, list stands for multiple -var-file option
         :param terraform_bin_path: binary path of terraform
         :type is_env_vars_included: bool
-        :param is_env_vars_included: included env variables when calling terraform cmd 
+        :param is_env_vars_included: included env variables when calling terraform cmd
         """
         self.is_env_vars_included = is_env_vars_included
         self.working_dir = working_dir
@@ -192,8 +192,7 @@ class Terraform(object):
             cmds += ['-{k}={v}'.format(k=k, v=v)]
 
         cmds += args
-        cmd = ' '.join(cmds)
-        return cmd
+        return cmds
 
     def cmd(self, cmd, *args, **kwargs):
         """
@@ -224,8 +223,8 @@ class Terraform(object):
             stderr = sys.stderr
             stdout = sys.stdout
 
-        cmd_string = self.generate_cmd_string(cmd, *args, **kwargs)
-        log.debug('command: {c}'.format(c=cmd_string))
+        cmds = self.generate_cmd_string(cmd, *args, **kwargs)
+        log.debug('command: {c}'.format(c=' '.join(cmds)))
 
         working_folder = self.working_dir if self.working_dir else None
 
@@ -233,7 +232,7 @@ class Terraform(object):
         if self.is_env_vars_included:
             environ_vars = os.environ.copy()
 
-        p = subprocess.Popen(cmd_string, stdout=stdout, stderr=stderr, shell=True,
+        p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
                              cwd=working_folder, env=environ_vars)
         out, err = p.communicate()
         ret_code = p.returncode
@@ -250,13 +249,15 @@ class Terraform(object):
         else:
             return ret_code, None, None
 
-    def output(self, name):
+    def output(self, name, *args, **kwargs):
         """
         https://www.terraform.io/docs/commands/output.html
         :param name: name of output
         :return: output value
         """
-        ret, out, err = self.cmd('output', name, json=IsFlagged)
+
+        ret, out, err = self.cmd(
+            'output', name, json=IsFlagged, *args, **kwargs)
 
         log.debug('output raw string: {0}'.format(out))
         if ret != 0:
