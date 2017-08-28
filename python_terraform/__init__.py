@@ -10,7 +10,15 @@ import tempfile
 
 from python_terraform.tfstate import Tfstate
 
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
 log = logging.getLogger(__name__)
+log.addHandler(NullHandler())
 
 
 class IsFlagged:
