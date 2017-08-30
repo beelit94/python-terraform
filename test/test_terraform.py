@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
 current_path = os.path.dirname(os.path.realpath(__file__))
 
+FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS = "test 'test.out!"
 STRING_CASES = [
      [
          lambda x: x.generate_cmd_string('apply', 'the_folder',
@@ -45,6 +46,14 @@ CMD_CASES = [
             1,
             'command: terraform import -no-color aws_instance.foo i-abcd1234',
             ''
+        ],
+        # test with space and special character in file path
+        [
+            lambda x: x.cmd('plan', 'var_to_output', out=FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS),
+            '',
+            0,
+            '',
+            'var_to_output'
         ]
     ]
 ]
@@ -83,9 +92,13 @@ class TestTerraform(object):
         """ teardown any state that was previously setup with a setup_method
         call.
         """
+        exclude = ['test_tfstate_file',
+                'test_tfstate_file2',
+                'test_tfstate_file3']
 
         def purge(dir, pattern):
             for root, dirnames, filenames in os.walk(dir):
+                dirnames[:] = [d for d in dirnames if d not in exclude]
                 for filename in fnmatch.filter(filenames, pattern):
                     f = os.path.join(root, filename)
                     os.remove(f)
@@ -94,7 +107,9 @@ class TestTerraform(object):
                     shutil.rmtree(d)
 
         purge('.', '*.tfstate')
+        purge('.', '*.tfstate.backup')
         purge('.', '*.terraform')
+        purge('.', FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS)
 
     @pytest.mark.parametrize([
                  "method", "expected"
@@ -156,6 +171,18 @@ class TestTerraform(object):
         tf.read_state_file()
         assert tf.tfstate.modules[0]['path'] == ['root']
 
+    def test_state_default(self):
+        cwd = os.path.join(current_path, 'test_tfstate_file2')
+        tf = Terraform(working_dir=cwd)
+        tf.read_state_file()
+        assert tf.tfstate.modules[0]['path'] == ['default']
+
+    def test_state_default_backend(self):
+        cwd = os.path.join(current_path, 'test_tfstate_file3')
+        tf = Terraform(working_dir=cwd)
+        tf.read_state_file()
+        assert tf.tfstate.modules[0]['path'] == ['default_backend']
+
     def test_pre_load_state_data(self):
         cwd = os.path.join(current_path, 'test_tfstate_file')
         tf = Terraform(working_dir=cwd, state='tfstate.test')
@@ -189,7 +216,7 @@ class TestTerraform(object):
         tf.init('var_to_output')
         tf.apply('var_to_output')
         result = tf.output('test_output', **param)
-        regex = re.compile('terraform output (-module=test2 -json|-json -module=test2) test_output')
+        regex = re.compile("terraform output (-module=test2 -json|-json -module=test2) test_output")
         log_str = string_logger()
         if param:
             assert re.search(regex, log_str), log_str

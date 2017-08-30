@@ -10,7 +10,15 @@ import tempfile
 
 from python_terraform.tfstate import Tfstate
 
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
 log = logging.getLogger(__name__)
+log.addHandler(NullHandler())
 
 
 class IsFlagged:
@@ -122,7 +130,7 @@ class Terraform(object):
 
     def plan(self, dir_or_plan=None, detailed_exitcode=IsFlagged, **kwargs):
         """
-        refert to https://www.terraform.io/docs/commands/plan.html
+        refer to https://www.terraform.io/docs/commands/plan.html
         :param detailed_exitcode: Return a detailed exit code when the command exits.
         :param dir_or_plan: relative path to plan/folder
         :param kwargs: options
@@ -133,6 +141,35 @@ class Terraform(object):
         options = self._generate_default_options(options)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd('plan', *args, **options)
+
+    def init(self, dir_or_plan=None, backend_config=None,
+            reconfigure=IsFlagged, force_copy=IsNotFlagged, backend=True,
+            **kwargs):
+        """
+        refer to https://www.terraform.io/docs/commands/init.html
+
+        By default, this assumes you want to use backend config, and tries to
+        init fresh. The flags -reconfigure and -backend=true are default.
+
+        :param backend_config: a dictionary of backend config options. eg.
+                t = Terraform()
+                t.init(backend_config={'access_key': 'myaccesskey', 
+                'secret_key': 'mysecretkey', 'bucket': 'mybucketname'})
+        :param reconfigure: whether or not to force reconfiguration of backend
+        :param force_copy: whether or not to migrate from the previous backend
+                           settings to the new backend settings
+        :param backend: whether or not to use backend settings for init
+        :param kwargs: options
+        :return: ret_code, stdout, stderr
+        """
+        options = kwargs
+        options['backend_config'] = backend_config
+        options['reconfigure'] = reconfigure
+        options['force_copy'] = force_copy
+        options['backend'] = backend
+        options = self._generate_default_options(options)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd('init', *args, **options)
 
     def generate_cmd_string(self, cmd, *args, **kwargs):
         """
@@ -170,13 +207,18 @@ class Terraform(object):
                     cmds += ['-{k}={v}'.format(k=k, v=sub_v)]
                 continue
 
-            # right now we assume only variables will be passed as dict
-            # since map type sent in string won't work, create temp var file for
-            # variables, and clean it up later
             if type(v) is dict:
-                filename = self.temp_var_files.create(v)
-                cmds += ['-var-file={0}'.format(filename)]
-                continue
+                if 'backend-config' in k:
+                    for bk, bv in v.items():
+                        cmds += ['-backend-config={k}={v}'.format(k=bk, v=bv)]
+                    continue
+
+                # since map type sent in string won't work, create temp var file for
+                # variables, and clean it up later
+                else:
+                    filename = self.temp_var_files.create(v)
+                    cmds += ['-var-file={0}'.format(filename)]
+                    continue
 
             # simple flag,
             if v is IsFlagged:
@@ -192,8 +234,7 @@ class Terraform(object):
             cmds += ['-{k}={v}'.format(k=k, v=v)]
 
         cmds += args
-        cmd = ' '.join(cmds)
-        return cmd
+        return cmds
 
     def cmd(self, cmd, *args, **kwargs):
         """
@@ -224,8 +265,8 @@ class Terraform(object):
             stderr = sys.stderr
             stdout = sys.stdout
 
-        cmd_string = self.generate_cmd_string(cmd, *args, **kwargs)
-        log.debug('command: {c}'.format(c=cmd_string))
+        cmds = self.generate_cmd_string(cmd, *args, **kwargs)
+        log.debug('command: {c}'.format(c=' '.join(cmds)))
 
         working_folder = self.working_dir if self.working_dir else None
 
@@ -233,7 +274,7 @@ class Terraform(object):
         if self.is_env_vars_included:
             environ_vars = os.environ.copy()
 
-        p = subprocess.Popen(cmd_string, stdout=stdout, stderr=stderr, shell=True,
+        p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
                              cwd=working_folder, env=environ_vars)
 
         synchronous = kwargs.pop('synchronous', True)
@@ -280,14 +321,19 @@ class Terraform(object):
         :return: states file in dict type
         """
 
-        if not file_path:
-            file_path = self.state
+        working_dir = self.working_dir or ''
+
+        file_path = file_path or self.state or ''
 
         if not file_path:
-            file_path = 'terraform.tfstate'
+            backend_path = os.path.join(file_path, '.terraform', 'terraform.tfstate')
 
-        if self.working_dir:
-            file_path = os.path.join(self.working_dir, file_path)
+            if os.path.exists(os.path.join(working_dir, backend_path)):
+                file_path = backend_path
+            else:
+                file_path = os.path.join(file_path, 'terraform.tfstate')
+
+        file_path = os.path.join(working_dir, file_path)
 
         self.tfstate = Tfstate.load_file(file_path)
 
