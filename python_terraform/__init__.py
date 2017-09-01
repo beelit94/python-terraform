@@ -10,7 +10,15 @@ import tempfile
 
 from python_terraform.tfstate import Tfstate
 
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
 log = logging.getLogger(__name__)
+log.addHandler(NullHandler())
 
 
 class IsFlagged:
@@ -76,7 +84,8 @@ class Terraform(object):
 
         return wrapper
 
-    def apply(self, dir_or_plan=None, input=False, no_color=IsFlagged, **kwargs):
+    def apply(self, dir_or_plan=None, input=False, no_color=IsFlagged,
+              **kwargs):
         """
         refer to https://terraform.io/docs/commands/apply.html
         no-color is flagged by default
@@ -122,7 +131,7 @@ class Terraform(object):
 
     def plan(self, dir_or_plan=None, detailed_exitcode=IsFlagged, **kwargs):
         """
-        refert to https://www.terraform.io/docs/commands/plan.html
+        refer to https://www.terraform.io/docs/commands/plan.html
         :param detailed_exitcode: Return a detailed exit code when the command exits.
         :param dir_or_plan: relative path to plan/folder
         :param kwargs: options
@@ -133,6 +142,32 @@ class Terraform(object):
         options = self._generate_default_options(options)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd('plan', *args, **options)
+
+    def init(self, dir_or_plan=None, backend_config=None,
+             reconfigure=IsFlagged, backend=True, **kwargs):
+        """
+        refer to https://www.terraform.io/docs/commands/init.html
+
+        By default, this assumes you want to use backend config, and tries to
+        init fresh. The flags -reconfigure and -backend=true are default.
+
+        :param dir_or_plan: relative path to the folder want to init
+        :param backend_config: a dictionary of backend config options. eg.
+                t = Terraform()
+                t.init(backend_config={'access_key': 'myaccesskey', 
+                'secret_key': 'mysecretkey', 'bucket': 'mybucketname'})
+        :param reconfigure: whether or not to force reconfiguration of backend
+        :param backend: whether or not to use backend settings for init
+        :param kwargs: options
+        :return: ret_code, stdout, stderr
+        """
+        options = kwargs
+        options['backend_config'] = backend_config
+        options['reconfigure'] = reconfigure
+        options['backend'] = backend
+        options = self._generate_default_options(options)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd('init', *args, **options)
 
     def generate_cmd_string(self, cmd, *args, **kwargs):
         """
@@ -161,35 +196,40 @@ class Terraform(object):
         cmds = cmd.split()
         cmds = [self.terraform_bin_path] + cmds
 
-        for k, v in kwargs.items():
-            if '_' in k:
-                k = k.replace('_', '-')
+        for option, value in kwargs.items():
+            if '_' in option:
+                option = option.replace('_', '-')
 
-            if type(v) is list:
-                for sub_v in v:
-                    cmds += ['-{k}={v}'.format(k=k, v=sub_v)]
+            if type(value) is list:
+                for sub_v in value:
+                    cmds += ['-{k}={v}'.format(k=option, v=sub_v)]
                 continue
 
-            # right now we assume only variables will be passed as dict
-            # since map type sent in string won't work, create temp var file for
-            # variables, and clean it up later
-            if type(v) is dict:
-                filename = self.temp_var_files.create(v)
-                cmds += ['-var-file={0}'.format(filename)]
-                continue
+            if type(value) is dict:
+                if 'backend-config' in option:
+                    for bk, bv in value.items():
+                        cmds += ['-backend-config={k}={v}'.format(k=bk, v=bv)]
+                    continue
+
+                # since map type sent in string won't work, create temp var file for
+                # variables, and clean it up later
+                else:
+                    filename = self.temp_var_files.create(value)
+                    cmds += ['-var-file={0}'.format(filename)]
+                    continue
 
             # simple flag,
-            if v is IsFlagged:
-                cmds += ['-{k}'.format(k=k)]
+            if value is IsFlagged:
+                cmds += ['-{k}'.format(k=option)]
                 continue
 
-            if v is None or v is IsNotFlagged:
+            if value is None or value is IsNotFlagged:
                 continue
 
-            if type(v) is bool:
-                v = 'true' if v else 'false'
+            if type(value) is bool:
+                value = 'true' if value else 'false'
 
-            cmds += ['-{k}={v}'.format(k=k, v=v)]
+            cmds += ['-{k}={v}'.format(k=option, v=value)]
 
         cmds += args
         return cmds
@@ -274,14 +314,20 @@ class Terraform(object):
         :return: states file in dict type
         """
 
-        if not file_path:
-            file_path = self.state
+        working_dir = self.working_dir or ''
+
+        file_path = file_path or self.state or ''
 
         if not file_path:
-            file_path = 'terraform.tfstate'
+            backend_path = os.path.join(file_path, '.terraform',
+                                        'terraform.tfstate')
 
-        if self.working_dir:
-            file_path = os.path.join(self.working_dir, file_path)
+            if os.path.exists(os.path.join(working_dir, backend_path)):
+                file_path = backend_path
+            else:
+                file_path = os.path.join(file_path, 'terraform.tfstate')
+
+        file_path = os.path.join(working_dir, file_path)
 
         self.tfstate = Tfstate.load_file(file_path)
 
@@ -297,7 +343,8 @@ class VariableFiles(object):
         with tempfile.NamedTemporaryFile('w+t', delete=False) as temp:
             log.debug('{0} is created'.format(temp.name))
             self.files.append(temp)
-            log.debug('variables wrote to tempfile: {0}'.format(str(variables)))
+            log.debug(
+                'variables wrote to tempfile: {0}'.format(str(variables)))
             temp.write(json.dumps(variables))
             file_name = temp.name
 

@@ -92,9 +92,13 @@ class TestTerraform(object):
         """ teardown any state that was previously setup with a setup_method
         call.
         """
+        exclude = ['test_tfstate_file',
+                'test_tfstate_file2',
+                'test_tfstate_file3']
 
         def purge(dir, pattern):
             for root, dirnames, filenames in os.walk(dir):
+                dirnames[:] = [d for d in dirnames if d not in exclude]
                 for filename in fnmatch.filter(filenames, pattern):
                     f = os.path.join(root, filename)
                     os.remove(f)
@@ -103,6 +107,7 @@ class TestTerraform(object):
                     shutil.rmtree(d)
 
         purge('.', '*.tfstate')
+        purge('.', '*.tfstate.backup')
         purge('.', '*.terraform')
         purge('.', FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS)
 
@@ -165,6 +170,18 @@ class TestTerraform(object):
         tf = Terraform(working_dir=cwd, state='tfstate.test')
         tf.read_state_file()
         assert tf.tfstate.modules[0]['path'] == ['root']
+
+    def test_state_default(self):
+        cwd = os.path.join(current_path, 'test_tfstate_file2')
+        tf = Terraform(working_dir=cwd)
+        tf.read_state_file()
+        assert tf.tfstate.modules[0]['path'] == ['default']
+
+    def test_state_default_backend(self):
+        cwd = os.path.join(current_path, 'test_tfstate_file3')
+        tf = Terraform(working_dir=cwd)
+        tf.read_state_file()
+        assert tf.tfstate.modules[0]['path'] == ['default_backend']
 
     def test_pre_load_state_data(self):
         cwd = os.path.join(current_path, 'test_tfstate_file')
