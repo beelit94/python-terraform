@@ -1,4 +1,8 @@
 # Changelog
+## [0.9.1]
+1. [#10] log handler error on Linux environment
+1. [#11] Fix reading state file for remote state and support backend config for
+         init command
 ## [0.9.0]
 ### Fixed
 1. [#12] Output function doesn't accept parameter 'module'
