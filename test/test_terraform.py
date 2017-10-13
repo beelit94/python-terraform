@@ -35,8 +35,8 @@ CMD_CASES = [
     [
         [
             lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}) ,
-            #"doesn't need to do anything",
-            "no\nactions need to be performed",
+            ["doesn't need to do anything",
+             "no\nactions need to be performed"],
             0,
             False,
             '',
@@ -151,7 +151,16 @@ class TestTerraform(object):
           
         logs = string_logger()
         logs = logs.replace('\n', '')
-        assert expected_output in out
+        if isinstance(expected_output, list):
+            ok = False
+            for xo in expected_output:
+                if xo in out:
+                    ok = True
+                    break
+            if not ok:
+              assert expected_output[0] in out
+        else:
+          assert expected_output in out
         assert expected_ret_code == ret
         assert expected_logs in logs
 
