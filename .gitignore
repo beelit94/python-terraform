@@ -8,3 +8,4 @@
 /.tox/
 .dropbox
 Icon
+/pytestdebug.log
