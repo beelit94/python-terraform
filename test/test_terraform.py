@@ -12,6 +12,7 @@ import fnmatch
 
 logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
+
 current_path = os.path.dirname(os.path.realpath(__file__))
 
 FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS = "test 'test.out!"
@@ -30,12 +31,14 @@ STRING_CASES = [
  ]
 
 CMD_CASES = [
-    ['method', 'expected_output', 'expected_ret_code', 'expected_logs', 'folder'],
+    ['method', 'expected_output', 'expected_ret_code', 'expected_exception', 'expected_logs', 'folder'],
     [
         [
             lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}) ,
-            "doesn't need to do anything",
+            #"doesn't need to do anything",
+            "no\nactions need to be performed",
             0,
+            False,
             '',
             'var_to_output'
         ],
@@ -44,6 +47,16 @@ CMD_CASES = [
             lambda x: x.cmd('import', 'aws_instance.foo', 'i-abcd1234', no_color=IsFlagged),
             '',
             1,
+            False,
+            'command: terraform import -no-color aws_instance.foo i-abcd1234',
+            ''
+        ],
+        # try import aws instance with raise_on_error
+        [
+            lambda x: x.cmd('import', 'aws_instance.foo', 'i-abcd1234', no_color=IsFlagged, raise_on_error=True),
+            '',
+            1,
+            True,
             'command: terraform import -no-color aws_instance.foo i-abcd1234',
             ''
         ],
@@ -52,6 +65,7 @@ CMD_CASES = [
             lambda x: x.cmd('plan', 'var_to_output', out=FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS),
             '',
             0,
+            False,
             '',
             'var_to_output'
         ]
@@ -123,10 +137,18 @@ class TestTerraform(object):
             assert s in result
 
     @pytest.mark.parametrize(*CMD_CASES)
-    def test_cmd(self, method, expected_output, expected_ret_code, expected_logs, string_logger, folder):
+    def test_cmd(self, method, expected_output, expected_ret_code, expected_exception, expected_logs, string_logger, folder):
         tf = Terraform(working_dir=current_path)
         tf.init(folder)
-        ret, out, err = method(tf)
+        try:
+          ret, out, err = method(tf)
+          assert not expected_exception
+        except TerraformCommandError as e:
+          assert expected_exception
+          ret = e.returncode
+          out = e.out
+          err = e.err
+          
         logs = string_logger()
         logs = logs.replace('\n', '')
         assert expected_output in out
@@ -222,6 +244,44 @@ class TestTerraform(object):
             assert re.search(regex, log_str), log_str
         else:
             assert result == 'test'
+
+    @pytest.mark.parametrize(
+        ("param"),
+        [
+            ({}),
+            ({'module': 'test2'}),
+        ]
+    )
+    def test_output_full_value(self, param, string_logger):
+        tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
+        tf.init('var_to_output')
+        tf.apply('var_to_output')
+        result = tf.output('test_output', **dict(param, full_value=True))
+        regex = re.compile("terraform output (-module=test2 -json|-json -module=test2) test_output")
+        log_str = string_logger()
+        if param:
+            assert re.search(regex, log_str), log_str
+        else:
+            assert result['value'] == 'test'
+
+    @pytest.mark.parametrize(
+        ("param"),
+        [
+            ({}),
+            ({'module': 'test2'}),
+        ]
+    )
+    def test_output_all(self, param, string_logger):
+        tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
+        tf.init('var_to_output')
+        tf.apply('var_to_output')
+        result = tf.output(**param)
+        regex = re.compile("terraform output (-module=test2 -json|-json -module=test2)")
+        log_str = string_logger()
+        if param:
+            assert re.search(regex, log_str), log_str
+        else:
+            assert result['test_output']['value'] == 'test'
 
     def test_destroy(self):
         tf = Terraform(working_dir=current_path, variables={'test_var': 'test'})
