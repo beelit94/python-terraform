@@ -35,8 +35,9 @@ CMD_CASES = [
     [
         [
             lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}) ,
-            ["doesn't need to do anything",
-             "no\nactions need to be performed"],
+            # Expected output varies by terraform version
+            ["doesn't need to do anything",               # Terraform < 0.10.7 (used in travis env)
+                "no\nactions need to be performed"],      # Terraform >= 0.10.7
             0,
             False,
             '',
@@ -141,13 +142,13 @@ class TestTerraform(object):
         tf = Terraform(working_dir=current_path)
         tf.init(folder)
         try:
-          ret, out, err = method(tf)
-          assert not expected_exception
+            ret, out, err = method(tf)
+            assert not expected_exception
         except TerraformCommandError as e:
-          assert expected_exception
-          ret = e.returncode
-          out = e.out
-          err = e.err
+            assert expected_exception
+            ret = e.returncode
+            out = e.out
+            err = e.err
           
         logs = string_logger()
         logs = logs.replace('\n', '')
@@ -158,9 +159,9 @@ class TestTerraform(object):
                     ok = True
                     break
             if not ok:
-              assert expected_output[0] in out
+                assert expected_output[0] in out
         else:
-          assert expected_output in out
+            assert expected_output in out
         assert expected_ret_code == ret
         assert expected_logs in logs
 

@@ -32,9 +32,9 @@ class IsNotFlagged:
 
 class TerraformCommandError(subprocess.CalledProcessError):
   def __init__(self, ret_code, cmd, out, err):
-    super(TerraformCommandError, self).__init__(ret_code, cmd)
-    self.out = out
-    self.err = err
+      super(TerraformCommandError, self).__init__(ret_code, cmd)
+      self.out = out
+      self.err = err
 
 class Terraform(object):
     """
@@ -339,7 +339,8 @@ class Terraform(object):
         full_value = kwargs.pop('full_value', False)
         name_provided = (len(args) > 0)
         kwargs['json'] = IsFlagged
-        kwargs['capture_output'] = True
+        if not kwargs.get('capture_output', True) is True:
+          raise ValueError('capture_output is required for this method')
 
         ret, out, err = self.output_cmd(*args, **kwargs)
 
