@@ -345,7 +345,7 @@ class Terraform(object):
         ret, out, err = self.output_cmd(*args, **kwargs)
 
         if ret != 0:
-          return None
+            return None
 
         out = out.lstrip()
 
