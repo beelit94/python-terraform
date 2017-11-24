@@ -91,7 +91,7 @@ class Terraform(object):
 
         return wrapper
 
-    def apply(self, dir_or_plan=None, input=False, no_color=IsFlagged,
+    def apply(self, dir_or_plan=None, input=False, skip_plan=False, no_color=IsFlagged,
               **kwargs):
         """
         refer to https://terraform.io/docs/commands/apply.html
@@ -99,12 +99,14 @@ class Terraform(object):
         :param no_color: disable color of stdout
         :param input: disable prompt for a missing variable
         :param dir_or_plan: folder relative to working folder
+        :param skip_plan: force apply without plan (default: false)
         :param kwargs: same as kwags in method 'cmd'
         :returns return_code, stdout, stderr
         """
         default = kwargs
         default['input'] = input
         default['no_color'] = no_color
+        default['auto-approve'] = (skip_plan == True)
         option_dict = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd('apply', *args, **option_dict)
