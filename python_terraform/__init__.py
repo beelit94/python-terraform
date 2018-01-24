@@ -296,7 +296,7 @@ class Terraform(object):
 
         if ret_code == 0:
             self.read_state_file()
-        else:
+        elif (ret_code == 2 and len(err) > 0) or ret_code != 2:
             log.warn('error: {e}'.format(e=err))
 
         self.temp_var_files.clean_up()
