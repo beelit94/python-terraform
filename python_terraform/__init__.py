@@ -290,6 +290,11 @@ class Terraform(object):
 
         p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
                              cwd=working_folder, env=environ_vars)
+
+        synchronous = kwargs.pop('synchronous', True)
+        if not synchronous:
+            return p, None, None
+
         out, err = p.communicate()
         ret_code = p.returncode
         log.debug('output: {o}'.format(o=out))
