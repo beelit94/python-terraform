@@ -10,6 +10,7 @@ import tempfile
 
 from python_terraform.tfstate import Tfstate
 
+
 try:  # Python 2.7+
     from logging import NullHandler
 except ImportError:
@@ -28,6 +29,12 @@ class IsFlagged:
 class IsNotFlagged:
     pass
 
+
+class TerraformCommandError(subprocess.CalledProcessError):
+  def __init__(self, ret_code, cmd, out, err):
+      super(TerraformCommandError, self).__init__(ret_code, cmd)
+      self.out = out
+      self.err = err
 
 class Terraform(object):
     """
@@ -84,7 +91,7 @@ class Terraform(object):
 
         return wrapper
 
-    def apply(self, dir_or_plan=None, input=False, no_color=IsFlagged,
+    def apply(self, dir_or_plan=None, input=False, skip_plan=False, no_color=IsFlagged,
               **kwargs):
         """
         refer to https://terraform.io/docs/commands/apply.html
@@ -92,12 +99,14 @@ class Terraform(object):
         :param no_color: disable color of stdout
         :param input: disable prompt for a missing variable
         :param dir_or_plan: folder relative to working folder
+        :param skip_plan: force apply without plan (default: false)
         :param kwargs: same as kwags in method 'cmd'
         :returns return_code, stdout, stderr
         """
         default = kwargs
         default['input'] = input
         default['no_color'] = no_color
+        default['auto-approve'] = (skip_plan == True)
         option_dict = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd('apply', *args, **option_dict)
@@ -252,10 +261,17 @@ class Terraform(object):
                 if the option 'capture_output' is passed (with any value other than
                     True), terraform output will be printed to stdout/stderr and
                     "None" will be returned as out and err.
+                if the option 'raise_on_error' is passed (with any value that evaluates to True),
+                    and the terraform command returns a nonzerop return code, then
+                    a TerraformCommandError exception will be raised. The exception object will
+                    have the following properties:
+                      returncode: The command's return code
+                      out: The captured stdout, or None if not captured
+                      err: The captured stderr, or None if not captured
         :return: ret_code, out, err
         """
-
         capture_output = kwargs.pop('capture_output', True)
+        raise_on_error = kwargs.pop('raise_on_error', False)
         if capture_output is True:
             stderr = subprocess.PIPE
             stdout = subprocess.PIPE
@@ -274,6 +290,11 @@ class Terraform(object):
 
         p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
                              cwd=working_folder, env=environ_vars)
+
+        synchronous = kwargs.pop('synchronous', True)
+        if not synchronous:
+            return p, None, None
+
         out, err = p.communicate()
         ret_code = p.returncode
         log.debug('output: {o}'.format(o=out))
@@ -285,27 +306,62 @@ class Terraform(object):
 
         self.temp_var_files.clean_up()
         if capture_output is True:
-            return ret_code, out.decode('utf-8'), err.decode('utf-8')
+            out = out.decode('utf-8')
+            err = err.decode('utf-8')
         else:
-            return ret_code, None, None
+            out = None
+            err = None
 
-    def output(self, name, *args, **kwargs):
+        if ret_code != 0 and raise_on_error:
+            raise TerraformCommandError(
+                ret_code, ' '.join(cmds), out=out, err=err)
+
+        return ret_code, out, err
+
+
+    def output(self, *args, **kwargs):
         """
         https://www.terraform.io/docs/commands/output.html
-        :param name: name of output
-        :return: output value
+
+        Note that this method does not conform to the (ret_code, out, err) return convention. To use
+        the "output" command with the standard convention, call "output_cmd" instead of
+        "output".
+
+        :param args:   Positional arguments. There is one optional positional
+                       argument NAME; if supplied, the returned output text
+                       will be the json for a single named output value.
+        :param kwargs: Named options, passed to the command. In addition, 
+                          'full_value': If True, and NAME is provided, then
+                                        the return value will be a dict with
+                                        "value', 'type', and 'sensitive'
+                                        properties.
+        :return: None, if an error occured
+                 Output value as a string, if NAME is provided and full_value
+                    is False or not provided
+                 Output value as a dict with 'value', 'sensitive', and 'type' if
+                    NAME is provided and full_value is True.
+                 dict of named dicts each with 'value', 'sensitive', and 'type',
+                    if NAME is not provided
         """
+        full_value = kwargs.pop('full_value', False)
+        name_provided = (len(args) > 0)
+        kwargs['json'] = IsFlagged
+        if not kwargs.get('capture_output', True) is True:
+          raise ValueError('capture_output is required for this method')
 
-        ret, out, err = self.cmd(
-            'output', name, json=IsFlagged, *args, **kwargs)
+        ret, out, err = self.output_cmd(*args, **kwargs)
 
-        log.debug('output raw string: {0}'.format(out))
         if ret != 0:
             return None
+
         out = out.lstrip()
 
-        output_dict = json.loads(out)
-        return output_dict['value']
+        value = json.loads(out)
+
+        if name_provided and not full_value:
+            value = value['value']
+
+        return value
 
     def read_state_file(self, file_path=None):
         """
