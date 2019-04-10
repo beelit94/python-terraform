@@ -396,7 +396,7 @@ class VariableFiles(object):
         self.files = []
 
     def create(self, variables):
-        with tempfile.NamedTemporaryFile('w+t', delete=False) as temp:
+        with tempfile.NamedTemporaryFile('w+t', suffix='.tfvars.json', delete=False) as temp:
             log.debug('{0} is created'.format(temp.name))
             self.files.append(temp)
             log.debug(
