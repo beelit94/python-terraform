@@ -49,7 +49,8 @@ class Terraform(object):
                  parallelism=None,
                  var_file=None,
                  terraform_bin_path=None,
-                 is_env_vars_included=True):
+                 is_env_vars_included=True, 
+                 workspace=None):
         """
         :param working_dir: the folder of the working folder, if not given,
                             will be current working folder
@@ -65,6 +66,7 @@ class Terraform(object):
         :param terraform_bin_path: binary path of terraform
         :type is_env_vars_included: bool
         :param is_env_vars_included: included env variables when calling terraform cmd
+        :param workspace: current workspace.
         """
         self.is_env_vars_included = is_env_vars_included
         self.working_dir = working_dir
@@ -76,6 +78,7 @@ class Terraform(object):
             if terraform_bin_path else 'terraform'
         self.var_file = var_file
         self.temp_var_files = VariableFiles()
+        self.workspace = workspace
 
         # store the tfstate data
         self.tfstate = None
@@ -386,6 +389,21 @@ class Terraform(object):
         file_path = os.path.join(working_dir, file_path)
 
         self.tfstate = Tfstate.load_file(file_path)
+
+    def set_workspace(self, workspace=None, dir_or_plan=None, **kwargs):
+        """
+        set workspace
+        :param workspace: the desired workspace.
+        :param dir: The dir we want to swap workspace in.
+        :return: nothing
+        """
+
+        working_dir = self.working_dir if self.working_dir else None
+        options = kwargs
+        options['workspace'] = workspace
+        options = self._generate_default_options(options)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd('workspace', *args, **options)        
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
