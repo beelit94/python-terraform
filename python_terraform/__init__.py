@@ -398,7 +398,6 @@ class Terraform(object):
         :return: nothing
         """
 
-        working_dir = self.working_dir if self.working_dir else None
         options = kwargs
         options['workspace'] = workspace
         options = self._generate_default_options(options)
