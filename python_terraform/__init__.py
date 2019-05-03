@@ -394,7 +394,6 @@ class Terraform(object):
         """
         set workspace
         :param workspace: the desired workspace.
-        :param dir: The dir we want to swap workspace in.
         :return: nothing
         """
 
@@ -407,7 +406,6 @@ class Terraform(object):
         """
         set workspace
         :param workspace: the desired workspace.
-        :param dir: The dir we want to swap workspace in.
         :return: nothing
         """
 
@@ -416,11 +414,9 @@ class Terraform(object):
         args = self._generate_default_args(dir_or_plan)
         return self.cmd('workspace new ' + workspace, *args, **options)         
 
-    def show_workspace(self, workspace=None, dir_or_plan=None, **kwargs):
+    def show_workspace(self, dir_or_plan=None, **kwargs):
         """
         set workspace
-        :param workspace: the desired workspace.
-        :param dir: The dir we want to swap workspace in.
         :return: nothing
         """
 
