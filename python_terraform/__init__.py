@@ -399,10 +399,35 @@ class Terraform(object):
         """
 
         options = kwargs
-        options['workspace'] = workspace
         options = self._generate_default_options(options)
         args = self._generate_default_args(dir_or_plan)
-        return self.cmd('workspace', *args, **options)        
+        return self.cmd('workspace select ' + workspace, *args, **options)  
+
+    def create_workspace(self, workspace=None, dir_or_plan=None, **kwargs):
+        """
+        set workspace
+        :param workspace: the desired workspace.
+        :param dir: The dir we want to swap workspace in.
+        :return: nothing
+        """
+
+        options = kwargs
+        options = self._generate_default_options(options)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd('workspace new ' + workspace, *args, **options)         
+
+    def show_workspace(self, workspace=None, dir_or_plan=None, **kwargs):
+        """
+        set workspace
+        :param workspace: the desired workspace.
+        :param dir: The dir we want to swap workspace in.
+        :return: nothing
+        """
+
+        options = kwargs
+        options = self._generate_default_options(options)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd('workspace show', *args, **options)  
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
