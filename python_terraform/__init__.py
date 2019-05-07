@@ -50,7 +50,7 @@ class Terraform(object):
                  var_file=None,
                  terraform_bin_path=None,
                  is_env_vars_included=True, 
-                 workspace=None):
+                 ):
         """
         :param working_dir: the folder of the working folder, if not given,
                             will be current working folder
@@ -78,7 +78,6 @@ class Terraform(object):
             if terraform_bin_path else 'terraform'
         self.var_file = var_file
         self.temp_var_files = VariableFiles()
-        self.workspace = workspace
 
         # store the tfstate data
         self.tfstate = None
@@ -394,7 +393,7 @@ class Terraform(object):
         """
         set workspace
         :param workspace: the desired workspace.
-        :return: nothing
+        :return: status
         """
 
         options = kwargs
@@ -404,9 +403,9 @@ class Terraform(object):
 
     def create_workspace(self, workspace=None, dir_or_plan=None, **kwargs):
         """
-        set workspace
+        create workspace
         :param workspace: the desired workspace.
-        :return: nothing
+        :return: status
         """
 
         options = kwargs
@@ -416,8 +415,8 @@ class Terraform(object):
 
     def show_workspace(self, dir_or_plan=None, **kwargs):
         """
-        set workspace
-        :return: nothing
+        show workspace
+        :return: workspace
         """
 
         options = kwargs
