@@ -320,3 +320,23 @@ class TestTerraform(object):
         tf = Terraform(working_dir=current_path)
         tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
         assert 'command: terraform import -no-color aws_instance.foo i-abc1234' in string_logger()
+    
+    def test_create_workspace(self):
+        tf = Terraform(working_dir=current_path)
+        ret, out, err = tf.create_workspace('test')
+        assert ret == 0
+        assert err == ''
+
+    def test_set_workspace(self):
+        tf = Terraform(working_dir=current_path)
+        tf.create_workspace('test')
+        ret, out, err = tf.set_workspace('test')
+        assert ret == 0
+        assert err == ''
+
+    def test_show_workspace(self):
+        tf = Terraform(working_dir=current_path)
+        tf.create_workspace('test')
+        ret, out, err = tf.show_workspace('test')
+        assert ret == 0
+        assert err == ''   
