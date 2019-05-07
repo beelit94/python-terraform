@@ -323,12 +323,14 @@ class TestTerraform(object):
     
     def test_create_workspace(self):
         tf = Terraform(working_dir=current_path)
+        tf.init()
         ret, out, err = tf.create_workspace('test')
         assert ret == 0
         assert err == ''
 
     def test_set_workspace(self):
         tf = Terraform(working_dir=current_path)
+        tf.init()
         tf.create_workspace('test')
         ret, out, err = tf.set_workspace('test')
         assert ret == 0
@@ -336,7 +338,8 @@ class TestTerraform(object):
 
     def test_show_workspace(self):
         tf = Terraform(working_dir=current_path)
+        tf.init()
         tf.create_workspace('test')
-        ret, out, err = tf.show_workspace('test')
+        ret, out, err = tf.show_workspace()
         assert ret == 0
-        assert err == ''   
+        assert err == ''

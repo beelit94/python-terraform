@@ -389,40 +389,31 @@ class Terraform(object):
 
         self.tfstate = Tfstate.load_file(file_path)
 
-    def set_workspace(self, workspace=None, dir_or_plan=None, **kwargs):
+    def set_workspace(self, workspace):
         """
         set workspace
         :param workspace: the desired workspace.
         :return: status
         """
 
-        options = kwargs
-        options = self._generate_default_options(options)
-        args = self._generate_default_args(dir_or_plan)
-        return self.cmd('workspace select ' + workspace, *args, **options)  
+        return self.cmd('workspace select ' + workspace)  
 
-    def create_workspace(self, workspace=None, dir_or_plan=None, **kwargs):
+    def create_workspace(self, workspace):
         """
         create workspace
         :param workspace: the desired workspace.
         :return: status
         """
 
-        options = kwargs
-        options = self._generate_default_options(options)
-        args = self._generate_default_args(dir_or_plan)
-        return self.cmd('workspace new ' + workspace, *args, **options)         
+        return self.cmd('workspace new ' + workspace)         
 
-    def show_workspace(self, dir_or_plan=None, **kwargs):
+    def show_workspace(self):
         """
         show workspace
         :return: workspace
         """
 
-        options = kwargs
-        options = self._generate_default_options(options)
-        args = self._generate_default_args(dir_or_plan)
-        return self.cmd('workspace show', *args, **options)  
+        return self.cmd('workspace show')  
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
