@@ -405,7 +405,16 @@ class Terraform(object):
         :return: status
         """
 
-        return self.cmd('workspace new ' + workspace)         
+        return self.cmd('workspace new ' + workspace)     
+
+    def delete_workspace(self, workspace):
+        """
+        delete workspace
+        :param workspace: the desired workspace.
+        :return: status
+        """
+
+        return self.cmd('workspace delete ' + workspace)    
 
     def show_workspace(self):
         """
