@@ -325,6 +325,8 @@ class TestTerraform(object):
         tf = Terraform(working_dir=current_path)
         tf.init()
         ret, out, err = tf.create_workspace('test')
+        tf.set_workspace('default')
+        tf.delete_workspace('test')
         assert ret == 0
         assert err == ''
 
@@ -332,7 +334,9 @@ class TestTerraform(object):
         tf = Terraform(working_dir=current_path)
         tf.init()
         tf.create_workspace('test')
-        ret, out, err = tf.set_workspace('test')
+        tf.set_workspace('test')
+        tf.set_workspace('default')
+        ret, out, err = tf.delete_workspace('test')
         assert ret == 0
         assert err == ''
 
@@ -341,5 +345,17 @@ class TestTerraform(object):
         tf.init()
         tf.create_workspace('test')
         ret, out, err = tf.show_workspace()
+        tf.set_workspace('default')
+        tf.delete_workspace('test')
+        assert ret == 0
+        assert err == ''
+
+    def test_delete_workspace(self):
+        tf = Terraform(working_dir=current_path)
+        tf.init()
+        tf.create_workspace('test')
+        tf.set_workspace('default')
+        ret, out, err = tf.delete_workspace('test')
+        tf.show_workspace()
         assert ret == 0
         assert err == ''
