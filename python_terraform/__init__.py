@@ -422,7 +422,7 @@ class Terraform(object):
         :return: workspace
         """
 
-        return self.cmd('workspace' 'show')  
+        return self.cmd('workspace', 'show')  
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
