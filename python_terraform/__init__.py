@@ -66,7 +66,6 @@ class Terraform(object):
         :param terraform_bin_path: binary path of terraform
         :type is_env_vars_included: bool
         :param is_env_vars_included: included env variables when calling terraform cmd
-        :param workspace: current workspace.
         """
         self.is_env_vars_included = is_env_vars_included
         self.working_dir = working_dir
