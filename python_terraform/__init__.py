@@ -396,7 +396,7 @@ class Terraform(object):
         :return: status
         """
 
-        return self.cmd('workspace select ' + workspace)  
+        return self.cmd('workspace' ,'select', workspace)  
 
     def create_workspace(self, workspace):
         """
@@ -405,7 +405,7 @@ class Terraform(object):
         :return: status
         """
 
-        return self.cmd('workspace new ' + workspace)     
+        return self.cmd('workspace', 'new', workspace)     
 
     def delete_workspace(self, workspace):
         """
@@ -414,7 +414,7 @@ class Terraform(object):
         :return: status
         """
 
-        return self.cmd('workspace delete ' + workspace)    
+        return self.cmd('workspace', 'delete', workspace)    
 
     def show_workspace(self):
         """
@@ -422,7 +422,7 @@ class Terraform(object):
         :return: workspace
         """
 
-        return self.cmd('workspace show')  
+        return self.cmd('workspace' 'show')  
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
