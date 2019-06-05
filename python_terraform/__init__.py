@@ -49,7 +49,8 @@ class Terraform(object):
                  parallelism=None,
                  var_file=None,
                  terraform_bin_path=None,
-                 is_env_vars_included=True):
+                 is_env_vars_included=True, 
+                 ):
         """
         :param working_dir: the folder of the working folder, if not given,
                             will be current working folder
@@ -386,6 +387,41 @@ class Terraform(object):
         file_path = os.path.join(working_dir, file_path)
 
         self.tfstate = Tfstate.load_file(file_path)
+
+    def set_workspace(self, workspace):
+        """
+        set workspace
+        :param workspace: the desired workspace.
+        :return: status
+        """
+
+        return self.cmd('workspace' ,'select', workspace)  
+
+    def create_workspace(self, workspace):
+        """
+        create workspace
+        :param workspace: the desired workspace.
+        :return: status
+        """
+
+        return self.cmd('workspace', 'new', workspace)     
+
+    def delete_workspace(self, workspace):
+        """
+        delete workspace
+        :param workspace: the desired workspace.
+        :return: status
+        """
+
+        return self.cmd('workspace', 'delete', workspace)    
+
+    def show_workspace(self):
+        """
+        show workspace
+        :return: workspace
+        """
+
+        return self.cmd('workspace', 'show')  
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
