@@ -15,5 +15,5 @@
 1. [#24] Full support for output(); support for raise_on_error
 
 ## [0.10.1]
-1. [#48] adding extension for temp file to addapt change in terraform 0.12.0
+1. [#48] adding extension for temp file to adopt the change in terraform 0.12.0
 1. [#49] add workspace support
