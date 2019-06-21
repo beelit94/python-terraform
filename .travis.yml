@@ -1,8 +1,8 @@
 language: python
 python:
 - '2.7'
+- '3.5'
 - '3.6'
-- '3.7'
 before_install: sudo apt-get install unzip
 before_script:
   - export TFVER=0.12.1
@@ -36,7 +36,7 @@ deploy:
   on:
     branch: release/**
     tags: false
-    condition: $TRAVIS_PYTHON_VERSION = "3.7"
+    condition: $TRAVIS_PYTHON_VERSION = "3.5"
 - provider: pypi
   distributions: sdist
   user: beelit94
@@ -45,7 +45,7 @@ deploy:
   on:
     branch: master
     tags: false
-    condition: $TRAVIS_PYTHON_VERSION = "3.7"
+    condition: $TRAVIS_PYTHON_VERSION = "3.5"
 notifications:
   email:
     recipients:
