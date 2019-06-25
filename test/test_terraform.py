@@ -218,14 +218,14 @@ class TestTerraform(object):
 
     def test_apply_with_var_file(self, string_logger):
         tf = Terraform(working_dir=current_path)
-        var_file = os.path.join(current_path, 'tfvar_file', 'test.tfvars')
 
         tf.init()
         tf.apply(var_file=os.path.join(current_path, 'tfvar_file', 'test.tfvars'))
         logs = string_logger()
-        logs = logs.replace('\n', '')
-        expected_log = 'command: terraform apply -var-file={} -no-color -input=false -auto-approve=false'.format(var_file)
-        assert expected_log in logs
+        logs = logs.split('\n')
+        for log in logs:
+            if log.startswith('command: terraform apply'):
+                assert log.count('-var-file=') == 1
 
     @pytest.mark.parametrize(
         ['cmd', 'args', 'options'],
@@ -375,15 +375,18 @@ class TestTerraform(object):
             self, workspace_setup_teardown, string_logger
     ):
         workspace_name = 'test'
+        state_file_path = os.path.join(current_path, 'test_tfstate_file2', 'terraform.tfstate')
         with workspace_setup_teardown(workspace_name, create=False) as tf:
-            ret, out, err = tf.create_workspace('test', current_path, lock=True, no_color=IsFlagged)
+            ret, out, err = tf.create_workspace('test', current_path, no_color=IsFlagged, state=state_file_path)
 
         assert ret == 0
         assert err == ''
 
         logs = string_logger()
         logs = logs.replace('\n', '')
-        expected_log = 'command: terraform workspace new -lock=true -no-color test {}'.format(current_path)
+        expected_log = 'command: terraform workspace new -no-color -state={} test {}'.format(
+            state_file_path, current_path
+        )
         assert expected_log in logs
 
     def test_set_workspace(self, workspace_setup_teardown):
@@ -444,7 +447,7 @@ class TestTerraform(object):
         with workspace_setup_teardown(workspace_name, delete=False) as tf:
             tf.set_workspace('default')
             ret, out, err = tf.delete_workspace(
-                workspace_name, current_path, force=IsFlagged, no_color=IsFlagged, lock=True,
+                workspace_name, current_path, no_color=IsFlagged, force=IsFlagged,
             )
 
         assert ret == 0
@@ -452,5 +455,5 @@ class TestTerraform(object):
 
         logs = string_logger()
         logs = logs.replace('\n', '')
-        expected_log = 'command: terraform workspace delete -force -no-color -lock=true test {}'.format(current_path)
+        expected_log = 'command: terraform workspace delete -no-color -force test {}'.format(current_path)
         assert expected_log in logs
