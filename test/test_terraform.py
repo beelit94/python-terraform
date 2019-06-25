@@ -377,16 +377,14 @@ class TestTerraform(object):
         workspace_name = 'test'
         state_file_path = os.path.join(current_path, 'test_tfstate_file2', 'terraform.tfstate')
         with workspace_setup_teardown(workspace_name, create=False) as tf:
-            ret, out, err = tf.create_workspace('test', current_path, no_color=IsFlagged, state=state_file_path)
+            ret, out, err = tf.create_workspace('test', current_path, no_color=IsFlagged)
 
         assert ret == 0
         assert err == ''
 
         logs = string_logger()
         logs = logs.replace('\n', '')
-        expected_log = 'command: terraform workspace new -no-color -state={} test {}'.format(
-            state_file_path, current_path
-        )
+        expected_log = 'command: terraform workspace new -no-color test {}'.format(current_path)
         assert expected_log in logs
 
     def test_set_workspace(self, workspace_setup_teardown):
@@ -447,7 +445,7 @@ class TestTerraform(object):
         with workspace_setup_teardown(workspace_name, delete=False) as tf:
             tf.set_workspace('default')
             ret, out, err = tf.delete_workspace(
-                workspace_name, current_path, no_color=IsFlagged, force=IsFlagged,
+                workspace_name, current_path, force=IsFlagged,
             )
 
         assert ret == 0
@@ -455,5 +453,5 @@ class TestTerraform(object):
 
         logs = string_logger()
         logs = logs.replace('\n', '')
-        expected_log = 'command: terraform workspace delete -no-color -force test {}'.format(current_path)
+        expected_log = 'command: terraform workspace delete -force test {}'.format(current_path)
         assert expected_log in logs
