@@ -21,6 +21,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 log.addHandler(NullHandler())
 
+COMMAND_WITH_SUBCOMMANDS = ['workspace']
 
 class IsFlagged:
     pass
@@ -35,6 +36,7 @@ class TerraformCommandError(subprocess.CalledProcessError):
       super(TerraformCommandError, self).__init__(ret_code, cmd)
       self.out = out
       self.err = err
+
 
 class Terraform(object):
     """
@@ -205,6 +207,10 @@ class Terraform(object):
         """
         cmds = cmd.split()
         cmds = [self.terraform_bin_path] + cmds
+        if cmd in COMMAND_WITH_SUBCOMMANDS:
+            args = list(args)
+            subcommand = args.pop(0)
+            cmds.append(subcommand)
 
         for option, value in kwargs.items():
             if '_' in option:
@@ -223,9 +229,13 @@ class Terraform(object):
 
                 # since map type sent in string won't work, create temp var file for
                 # variables, and clean it up later
-                else:
-                    filename = self.temp_var_files.create(value)
-                    cmds += ['-var-file={0}'.format(filename)]
+                elif option == 'var':
+                    # We do not create empty var-files if there is no var passed.
+                    # An empty var-file would result in an error: An argument or block definition is required here
+                    if value:
+                        filename = self.temp_var_files.create(value)
+                        cmds += ['-var-file={0}'.format(filename)]
+
                     continue
 
             # simple flag,
@@ -319,7 +329,6 @@ class Terraform(object):
 
         return ret_code, out, err
 
-
     def output(self, *args, **kwargs):
         """
         https://www.terraform.io/docs/commands/output.html
@@ -388,40 +397,40 @@ class Terraform(object):
 
         self.tfstate = Tfstate.load_file(file_path)
 
-    def set_workspace(self, workspace):
+    def set_workspace(self, workspace, *args, **kwargs):
         """
         set workspace
         :param workspace: the desired workspace.
         :return: status
         """
 
-        return self.cmd('workspace' ,'select', workspace)  
+        return self.cmd('workspace', 'select', workspace, *args, **kwargs)
 
-    def create_workspace(self, workspace):
+    def create_workspace(self, workspace, *args, **kwargs):
         """
         create workspace
         :param workspace: the desired workspace.
         :return: status
         """
 
-        return self.cmd('workspace', 'new', workspace)     
+        return self.cmd('workspace', 'new', workspace, *args, **kwargs)
 
-    def delete_workspace(self, workspace):
+    def delete_workspace(self, workspace, *args, **kwargs):
         """
         delete workspace
         :param workspace: the desired workspace.
         :return: status
         """
 
-        return self.cmd('workspace', 'delete', workspace)    
+        return self.cmd('workspace', 'delete', workspace, *args, **kwargs)
 
-    def show_workspace(self):
+    def show_workspace(self, **kwargs):
         """
-        show workspace
+        show workspace, this command does not need the [DIR] part
         :return: workspace
         """
 
-        return self.cmd('workspace', 'show')  
+        return self.cmd('workspace', 'show',   **kwargs)
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()

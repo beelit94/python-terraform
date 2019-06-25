@@ -9,3 +9,11 @@
 .dropbox
 Icon
 /pytestdebug.log
+.DS_Store
+
+# virtualenv
+.virtualenv/
+
+
+# Intellij
+.idea/
