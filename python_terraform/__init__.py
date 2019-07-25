@@ -273,6 +273,8 @@ class Terraform(object):
         """
         capture_output = kwargs.pop('capture_output', True)
         raise_on_error = kwargs.pop('raise_on_error', False)
+        synchronous = kwargs.pop('synchronous', True)
+        
         if capture_output is True:
             stderr = subprocess.PIPE
             stdout = subprocess.PIPE
@@ -292,7 +294,6 @@ class Terraform(object):
         p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
                              cwd=working_folder, env=environ_vars)
 
-        synchronous = kwargs.pop('synchronous', True)
         if not synchronous:
             return p, None, None
 
