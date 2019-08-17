@@ -445,7 +445,7 @@ class TestTerraform(object):
         with workspace_setup_teardown(workspace_name, delete=False) as tf:
             tf.set_workspace('default')
             ret, out, err = tf.delete_workspace(
-                workspace_name, current_path, force=True,
+                workspace_name, current_path, force=IsFlagged
             )
 
         assert ret == 0
