@@ -17,3 +17,6 @@ Icon
 
 # Intellij
 .idea/
+
+# VSCode
+.vscode/
