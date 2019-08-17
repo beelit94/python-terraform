@@ -13,6 +13,7 @@ Icon
 
 # virtualenv
 .virtualenv/
+env/
 
 
 # Intellij
