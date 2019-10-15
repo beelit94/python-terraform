@@ -314,7 +314,7 @@ class Terraform(object):
         if ret_code == 0:
             self.read_state_file()
         else:
-            log.warn('error: {e}'.format(e=err))
+            log.warning('error: {e}'.format(e=err))
 
         self.temp_var_files.clean_up()
         if capture_output is True:
