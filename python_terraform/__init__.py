@@ -433,6 +433,23 @@ class Terraform(object):
 
         return self.cmd('workspace', 'show',   **kwargs)
 
+    def list_workspace(self, **kwargs):
+        """
+        return Terraform workspaces list
+        :return list of workspaces
+        """
+
+        return self.cmd('workspace', 'list', **kwargs)
+
+    def get_tfversion(self, **kwargs):
+        """
+        return Terraform version
+        :return: version_string
+        """
+
+        return self.cmd('--version', **kwargs)
+
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
 
