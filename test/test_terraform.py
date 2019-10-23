@@ -10,6 +10,7 @@ import logging
 import re
 import shutil
 import fnmatch
+import re
 
 logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
@@ -200,11 +201,10 @@ class TestTerraform(object):
     @pytest.mark.parametrize(
         ("folder", "variables", "var_files", "expected_output", "options"),
         [
-            ("var_to_output",
-             {'test_var': 'test'}, None, "test_output=test", {}),
+            ("var_to_output", {'test_var': 'test'}, None, "test_output=test", {}),
             ("var_to_output", {'test_list_var': ['c', 'd']}, None, "test_list_output=[c,d]", {}),
-            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, None, "test_map_output={a=ab=bc=cd=d}", {}),
-            ("var_to_output", {'test_map_var': {"c": "c", "d": "d"}}, 'var_to_output/test_map_var.json', "test_map_output={a=ab=bc=cd=de=ef=f}", {}),
+            ("var_to_output", {'test_map_var': {"a": "a","b": "b", "c": "c", "d": "d"}}, None, "test_map_output={a=ab=bc=cd=d}", {}),
+            ("var_to_output", {'test_map_var': {"a": "a","b": "b", "c": "c", "d": "d", "e": "e", "f": "f"}}, None, "test_map_output={a=ab=bc=cd=de=ef=f}", {}), # we should probably remove this the behaivor being tested for is deprecated.
             ("var_to_output", {}, None, "\x1b[0m\x1b[1m\x1b[32mApplycomplete!", {"no_color": IsNotFlagged})
         ])
     def test_apply(self, folder, variables, var_files, expected_output, options):
@@ -213,7 +213,7 @@ class TestTerraform(object):
         tf.init(folder)
         ret, out, err = tf.apply(folder, **options)
         assert ret == 0
-        assert expected_output in out.replace('\n', '').replace(' ', '')
+        assert expected_output in out.replace('"', '').replace('\n', '').replace(' ', '').replace(',]', ']')
         assert err == ''
 
     def test_apply_with_var_file(self, string_logger):
