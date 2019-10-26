@@ -89,7 +89,7 @@ class Terraform(object):
             cmd_name = str(item)
             if cmd_name.endswith('_cmd'):
                 cmd_name = cmd_name[:-4]
-            logging.debug('called with %r and %r' % (args, kwargs))
+            log.debug('called with %r and %r' % (args, kwargs))
             return self.cmd(cmd_name, *args, **kwargs)
 
         return wrapper
