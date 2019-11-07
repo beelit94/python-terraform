@@ -288,6 +288,9 @@ class Terraform(object):
         if capture_output is True:
             stderr = subprocess.PIPE
             stdout = subprocess.PIPE
+        elif capture_output == "framework":
+            stderr = None
+            stdout = None
         else:
             stderr = sys.stderr
             stdout = sys.stdout
