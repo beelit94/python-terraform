@@ -304,8 +304,9 @@ class Terraform(object):
         if self.is_env_vars_included:
             environ_vars = os.environ.copy()
 
+        cmds.append(working_folder)
         p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
-                             cwd=working_folder, env=environ_vars)
+                             env=environ_vars)
 
         if not synchronous:
             return p, None, None
