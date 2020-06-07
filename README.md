@@ -118,7 +118,7 @@ In shell:
 In python-terraform:
     
     from python_terraform import *
-    tf = terraform(working_dir='/home/test')
+    tf = Terraform(working_dir='/home/test')
     tf.fmt(diff=True)
 
     
