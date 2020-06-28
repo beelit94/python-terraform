@@ -20,7 +20,7 @@ except IOError:
 
 setup(
     name=module_name,
-    version='0.10.2',
+    version='0.11.0',
     url='https://github.com/beelit94/python-terraform',
     license='MIT',
     author='Freddy Tan',
@@ -48,7 +48,6 @@ setup(
         'Operating System :: Unix',
         # 'Operating System :: Windows',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ]
