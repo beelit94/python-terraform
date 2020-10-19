@@ -50,7 +50,7 @@ CMD_CASES = [
             '',
             1,
             False,
-            'command: terraform import -no-color aws_instance.foo i-abcd1234',
+            'Command: terraform import -no-color aws_instance.foo i-abcd1234',
             ''
         ],
         # try import aws instance with raise_on_error
@@ -59,7 +59,7 @@ CMD_CASES = [
             '',
             1,
             True,
-            'command: terraform import -no-color aws_instance.foo i-abcd1234',
+            'Command: terraform import -no-color aws_instance.foo i-abcd1234',
             ''
         ],
         # test with space and special character in file path
@@ -77,7 +77,7 @@ CMD_CASES = [
             '',
             0,
             False,
-            'command: terraform workspace show -no-color',
+            'Command: terraform workspace show -no-color',
             ''
         ],
     ]
@@ -181,7 +181,7 @@ class TestTerraform(object):
             ret = e.returncode
             out = e.out
             err = e.err
-          
+
         logs = string_logger()
         logs = logs.replace('\n', '')
         if isinstance(expected_output, list):
@@ -362,8 +362,8 @@ class TestTerraform(object):
     def test_import(self, string_logger):
         tf = Terraform(working_dir=current_path)
         tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
-        assert 'command: terraform import -no-color aws_instance.foo i-abc1234' in string_logger()
-    
+        assert 'Command: terraform import -no-color aws_instance.foo i-abc1234' in string_logger()
+
     def test_create_workspace(self, workspace_setup_teardown):
         workspace_name = 'test'
         with workspace_setup_teardown(workspace_name, create=False) as tf:
@@ -384,7 +384,7 @@ class TestTerraform(object):
 
         logs = string_logger()
         logs = logs.replace('\n', '')
-        expected_log = 'command: terraform workspace new -no-color test {}'.format(current_path)
+        expected_log = 'Command: terraform workspace new -no-color test {}'.format(current_path)
         assert expected_log in logs
 
     def test_set_workspace(self, workspace_setup_teardown):
@@ -405,7 +405,7 @@ class TestTerraform(object):
 
         logs = string_logger()
         logs = logs.replace('\n', '')
-        expected_log = 'command: terraform workspace select -no-color test {}'.format(current_path)
+        expected_log = 'Command: terraform workspace select -no-color test {}'.format(current_path)
         assert expected_log in logs
 
     def test_show_workspace(self, workspace_setup_teardown):
@@ -427,7 +427,7 @@ class TestTerraform(object):
 
         logs = string_logger()
         logs = logs.replace('\n', '')
-        expected_log = 'command: terraform workspace show -no-color'
+        expected_log = 'Command: terraform workspace show -no-color'
         assert expected_log in logs
 
     def test_delete_workspace(self, workspace_setup_teardown):
@@ -453,5 +453,5 @@ class TestTerraform(object):
 
         logs = string_logger()
         logs = logs.replace('\n', '')
-        expected_log = 'command: terraform workspace delete -force test {}'.format(current_path)
+        expected_log = 'Command: terraform workspace delete -force test {}'.format(current_path)
         assert expected_log in logs
