@@ -1,8 +1,9 @@
 language: python
 python:
-- '2.7'
-- '3.5'
 - '3.6'
+- '3.7'
+- '3.8'
+- '3.9'
 before_install: sudo apt-get install unzip
 before_script:
   - export TFVER=0.10.0
@@ -26,27 +27,3 @@ branches:
     - master
     - develop
     - release/**
-deploy:
-- provider: pypi
-  distributions: sdist
-  server: https://testpypi.python.org/pypi
-  user: beelit94
-  password:
-    secure: sWxc+p/gdq3k2WbUGNG2F4TukFNkTkvq6OPaiOvyfgWThYNk6/juRkMd8flmTbh0VGhcjFbpDLeSApb2kFhfiokYJSH1hOOcmXf8xzYH8/+R4DDEiGa5Y/pR9TBvYu4S8eJEfFUFfb1BBpapykj7o43hcaqMExBJIdVJU7aeoEAC1jQeTJh8wWwdJKHy2dNSM+6RVhk3e5+b0LfK7Bk5sU5P+YdEMj79MJU450J4OmZXWzJgvBN5/2QfVa5LrUD00nYuGuiBniz2lVevIHWjUYawUzpPsTa7F0s2WemG9YcV7U8u06xNjY9Ce3CTbxNhc7OIKq+TCkOgR3qZFXVJ8A87G+AT2iQ01VslQ4DJCxnJNTnpqojWnwf6MFL9O8ONioWYO32bhQFKOQ806ASHP4lNMRDKqx8hXtP5In7/r0SARKscv6Bas83rp+FESkKD5vWgkZJG+yx96LlwRLUhSVnVyb/nOJ++zt5RR3BvY2O4p9YAZY3Qt8TQihOdBQKnY3UXsMyNaE25+yvyNWpmyJiePRbTUd+cpLnycnqG9Ll8v6TpFXb6ahFMjlAFfJNQYlREfseClTHSRjZNxfsXGQCsJh6TZAq7jOB5hCk3q41eOUFWARxbyj8j59NBV8fSQrrGJJ9/VZKQeYiQlBB9KpK4PrnH84oeQ8i+VSbVr5w=
-  on:
-    branch: release/**
-    tags: false
-    condition: $TRAVIS_PYTHON_VERSION = "3.5"
-- provider: pypi
-  distributions: sdist
-  user: beelit94
-  password:
-    secure: QhCiTLrBvw/Uzt3eiLEmvMP3uHnayVCETqEDA+2+Q9vFavqj0CHA76zqYonBFqnh0a3HFCRIVVt+6ynpZ10kpQ3tAObIw+pY39ZPnpAhOjSpFzzMdpIF9Bhv9A93ng2iSESAZPAOwktHzUwjFx0Zvl0lSYD9rutHgttGgdU2CajiUtwTUhCTjOAVdR2Gm+15H808vzKWnMaKflXxZt+fkt279mQTYAtz6eBWtZwIKry/uAJCSrPSWtbi50O0HsWRMXLXWH5Jn/BVjWSDSM92DssUDq0D+tQyp4M5nQXJ9EyAvEdsKNLx3cvNruznh2ohI2jmcoIjwFiS6+wrEmUiXkP86iyzCSqL/EbcOG0xUh3vbfYtMBp7jENgD405+3SEhPY4PlqUmc+HDtB7FUcHz4y7wGWJRGyQzNnjJ6Tv0Ajdz5mfJubWVIvHjcRqkxTVtUKt50o00xZ62M0ZzQkDTIHQEsZly0XeHAgSvNzWkmjt9BiBrZ9OkoWVkRpSrCBy/EcpDNPCTSfSzOQ0Nq1ePFjkkW1n8QWDW9Pdb+/7/P2y9E2S8CT+nXBkRQeQiO86Qf1Ireg7k9TA5VYisVZ6bEXEc9UV0mAojpSsC7zWhVlbAoltN6ZbjKmqy/wqn2QIcJemcSie0JigzKpdw7l8FPT2lCRyTKlYLpRyKXzSkNI=
-  on:
-    branch: master
-    tags: false
-    condition: $TRAVIS_PYTHON_VERSION = "3.5"
-notifications:
-  email:
-    recipients:
-      - beelit94@gmail.com
