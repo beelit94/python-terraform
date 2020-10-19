@@ -1,6 +1,6 @@
 import json
-import os
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class Tfstate:
 
         Parses then as JSON and put the result into the object.
         """
-        logger.debug('read data from %s', file_path)
+        logger.debug("read data from %s", file_path)
         if os.path.exists(file_path):
             with open(file_path) as f:
                 json_data = json.load(f)
@@ -27,6 +27,6 @@ class Tfstate:
             tf_state.tfstate_file = file_path
             return tf_state
 
-        logger.debug('%s is not exist', file_path)
+        logger.debug("%s is not exist", file_path)
 
         return Tfstate()

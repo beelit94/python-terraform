@@ -1,12 +1,11 @@
-import subprocess
-import os
-import sys
 import json
 import logging
+import os
+import subprocess
+import sys
 import tempfile
 
 from python_terraform.tfstate import Tfstate
-
 
 logger = logging.getLogger(__name__)
 
