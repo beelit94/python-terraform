@@ -1,16 +1,13 @@
-try:
-    from cStringIO import StringIO  # Python 2
-except ImportError:
-    from io import StringIO
 import fnmatch
 import logging
 import os
 import re
 import shutil
 from contextlib import contextmanager
+from io import StringIO
 
 import pytest
-from python_terraform import *
+from python_terraform import IsFlagged, IsNotFlagged, Terraform, TerraformCommandError
 
 logging.basicConfig(level=logging.DEBUG)
 root_logger = logging.getLogger()
@@ -46,10 +43,7 @@ CMD_CASES = [
                 "plan", "var_to_output", no_color=IsFlagged, var={"test_var": "test"}
             ),
             # Expected output varies by terraform version
-            [
-                "doesn't need to do anything",  # Terraform < 0.10.7 (used in travis env)
-                "no\nactions need to be performed",
-            ],  # Terraform >= 0.10.7
+            "Plan: 0 to add, 0 to change, 0 to destroy.",
             0,
             False,
             "",
@@ -231,21 +225,22 @@ class TestTerraform(object):
                 "var_to_output",
                 {"test_list_var": ["c", "d"]},
                 None,
-                "test_list_output=[c,d]",
+                'test_list_output=["c","d",]',
                 {},
             ),
             (
                 "var_to_output",
                 {"test_map_var": {"c": "c", "d": "d"}},
                 None,
-                "test_map_output={a=ab=bc=cd=d}",
+                'test_map_output={"c"="c""d"="d"}',
                 {},
             ),
             (
                 "var_to_output",
                 {"test_map_var": {"c": "c", "d": "d"}},
                 "var_to_output/test_map_var.json",
-                "test_map_output={a=ab=bc=cd=de=ef=f}",
+                # Values are overriden
+                'test_map_output={"e"="e""f"="f"}',
                 {},
             ),
             (
@@ -261,7 +256,6 @@ class TestTerraform(object):
         tf = Terraform(
             working_dir=current_path, variables=variables, var_file=var_files
         )
-        # after 0.10.0 we always need to init
         tf.init(folder)
         ret, out, err = tf.apply(folder, **options)
         assert ret == 0
@@ -322,7 +316,7 @@ class TestTerraform(object):
         tf = Terraform(working_dir=current_path, variables=variables)
         tf.init(folder)
         ret, out, err = tf.apply(
-            folder, var={"test_var": "test2"}, no_color=IsNotFlagged
+            folder, var={"test_var": "test2"}, no_color=IsNotFlagged,
         )
         out = out.replace("\n", "")
         assert "\x1b[0m\x1b[1m\x1b[32mApply" in out
@@ -343,21 +337,6 @@ class TestTerraform(object):
             assert re.search(regex, log_str), log_str
         else:
             assert result == "test"
-
-    @pytest.mark.parametrize(("param"), [({}), ({"module": "test2"}),])
-    def test_output_full_value(self, param, string_logger):
-        tf = Terraform(working_dir=current_path, variables={"test_var": "test"})
-        tf.init("var_to_output")
-        tf.apply("var_to_output")
-        result = tf.output("test_output", **dict(param, full_value=True))
-        regex = re.compile(
-            "terraform output (-module=test2 -json|-json -module=test2) test_output"
-        )
-        log_str = string_logger()
-        if param:
-            assert re.search(regex, log_str), log_str
-        else:
-            assert result["value"] == "test"
 
     @pytest.mark.parametrize(("param"), [({}), ({"module": "test2"}),])
     def test_output_all(self, param, string_logger):

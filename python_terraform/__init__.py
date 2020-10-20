@@ -90,7 +90,7 @@ class Terraform(object):
         self,
         dir_or_plan=None,
         input=False,
-        skip_plan=False,
+        skip_plan=True,
         no_color=IsFlagged,
         **kwargs,
     ):
@@ -104,10 +104,12 @@ class Terraform(object):
         :param kwargs: same as kwags in method 'cmd'
         :returns return_code, stdout, stderr
         """
+        if not skip_plan:
+            return self.plan(dir_or_plan=dir_or_plan, **kwargs)
         default = kwargs
         default["input"] = input
         default["no_color"] = no_color
-        default["auto-approve"] = skip_plan is True
+        default["auto-approve"] = True
         option_dict = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("apply", *args, **option_dict)
@@ -358,8 +360,6 @@ class Terraform(object):
                  dict of named dicts each with 'value', 'sensitive', and 'type',
                     if NAME is not provided
         """
-        full_value = kwargs.pop("full_value", False)
-        name_provided = bool(len(args))
         kwargs["json"] = IsFlagged
         if not kwargs.get("capture_output", True) is True:
             raise ValueError("capture_output is required for this method")
@@ -369,14 +369,7 @@ class Terraform(object):
         if ret:
             return None
 
-        out = out.lstrip()
-
-        value = json.loads(out)
-
-        if name_provided and not full_value:
-            value = value["value"]
-
-        return value
+        return json.loads(out.lstrip())
 
     def read_state_file(self, file_path=None):
         """Read .tfstate file
