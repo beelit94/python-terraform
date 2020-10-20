@@ -3,8 +3,11 @@
 python-terraform is a python module provide a wrapper of `terraform` command line tool.
 `terraform` is a tool made by Hashicorp, please refer to https://terraform.io/
 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+
 ### Status
-[![Build Status](https://travis-ci.org/beelit94/python-terraform.svg?branch=develop)](https://travis-ci.org/beelit94/python-terraform)
+[![Build Status](https://travis-ci.org/aubustou/python-terraform.svg?branch=develop)](https://travis-ci.org/aubustou/python-terraform)
 
 ## Installation
     pip install python-terraform
