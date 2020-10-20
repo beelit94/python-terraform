@@ -32,6 +32,8 @@ setup(
     package_data={},
     platforms="any",
     install_requires=dependencies,
+    tests_require=["pytest"],
+    python_requires=">=3.6",
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         # 'Development Status :: 1 - Planning',
@@ -49,7 +51,6 @@ setup(
         "Operating System :: Unix",
         # 'Operating System :: Windows',
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
