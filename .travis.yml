@@ -3,7 +3,6 @@ python:
 - '3.6'
 - '3.7'
 - '3.8'
-- '3.9'
 before_install: sudo apt-get install unzip
 before_script:
   - export TFVER=0.13.4
@@ -17,7 +16,6 @@ before_script:
   - unzip terraform_bin.zip -d tf_bin
 install:
   - curl https://bootstrap.pypa.io/ez_setup.py -o - | python
-  - pip install tox-travis
   - pip install .
 script:
   - export PATH=$PATH:$PWD/tf_bin
