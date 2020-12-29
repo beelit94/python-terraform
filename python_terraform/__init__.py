@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# above is for compatibility of python2.7.11
-
 import subprocess
 import os
 import sys
@@ -11,17 +8,11 @@ import tempfile
 from python_terraform.tfstate import Tfstate
 
 
-try:  # Python 2.7+
-    from logging import NullHandler
-except ImportError:
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
-
 log = logging.getLogger(__name__)
-log.addHandler(NullHandler())
+log.addHandler(logging.NullHandler())
 
 COMMAND_WITH_SUBCOMMANDS = ['workspace']
+
 
 class IsFlagged:
     pass
@@ -32,10 +23,10 @@ class IsNotFlagged:
 
 
 class TerraformCommandError(subprocess.CalledProcessError):
-  def __init__(self, ret_code, cmd, out, err):
-      super(TerraformCommandError, self).__init__(ret_code, cmd)
-      self.out = out
-      self.err = err
+    def __init__(self, ret_code, cmd, out, err):
+        super(TerraformCommandError, self).__init__(ret_code, cmd)
+        self.out = out
+        self.err = err
 
 
 class Terraform(object):
@@ -51,7 +42,7 @@ class Terraform(object):
                  parallelism=None,
                  var_file=None,
                  terraform_bin_path=None,
-                 is_env_vars_included=True, 
+                 is_env_vars_included=True,
                  ):
         """
         :param working_dir: the folder of the working folder, if not given,
@@ -254,7 +245,7 @@ class Terraform(object):
         cmds += args
         return cmds
 
-    def cmd(self, cmd, *args, **kwargs):
+    def cmd(self, cmd, *args, verbose=False, **kwargs):
         """
         run a terraform command, if success, will try to read state file
         :param cmd: command and sub-command of terraform, seperated with space
@@ -284,7 +275,6 @@ class Terraform(object):
         capture_output = kwargs.pop('capture_output', True)
         raise_on_error = kwargs.pop('raise_on_error', False)
         synchronous = kwargs.pop('synchronous', True)
-        
         if capture_output is True:
             stderr = subprocess.PIPE
             stdout = subprocess.PIPE
@@ -297,6 +287,8 @@ class Terraform(object):
 
         cmds = self.generate_cmd_string(cmd, *args, **kwargs)
         log.debug('command: {c}'.format(c=' '.join(cmds)))
+        if verbose:
+            print('command: `{c}`...'.format(c=' '.join(cmds)))
 
         working_folder = self.working_dir if self.working_dir else None
 
@@ -304,11 +296,16 @@ class Terraform(object):
         if self.is_env_vars_included:
             environ_vars = os.environ.copy()
 
-        p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
-                             cwd=working_folder, env=environ_vars)
+        with subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
+                              cwd=working_folder, env=environ_vars) as p:
+            if not synchronous:
+                return p, None, None
 
-        if not synchronous:
-            return p, None, None
+            if verbose and p.stdout:
+                print("live output: \"\"\"")
+                for line in p.stdout:
+                    print("    %s" % str(line, "utf-8").rstrip())
+                print("\"\"\"")
 
         out, err = p.communicate()
         ret_code = p.returncode
@@ -319,7 +316,7 @@ class Terraform(object):
         else:
             log.warning('error: {e}'.format(e=err))
 
-        self.temp_var_files.clean_up()
+        # self.temp_var_files.clean_up()
         if capture_output is True:
             out = out.decode('utf-8')
             err = err.decode('utf-8')
@@ -361,7 +358,7 @@ class Terraform(object):
         name_provided = (len(args) > 0)
         kwargs['json'] = IsFlagged
         if not kwargs.get('capture_output', True) is True:
-          raise ValueError('capture_output is required for this method')
+            raise ValueError('capture_output is required for this method')
 
         ret, out, err = self.output_cmd(*args, **kwargs)
 
@@ -434,7 +431,7 @@ class Terraform(object):
         :return: workspace
         """
 
-        return self.cmd('workspace', 'show',   **kwargs)
+        return self.cmd('workspace', 'show', **kwargs)
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
