@@ -3,6 +3,7 @@ try:
 except ImportError:
     from io import StringIO
 from python_terraform import *
+from contextlib import contextmanager
 import pytest
 import os
 import logging
@@ -34,7 +35,7 @@ CMD_CASES = [
     ['method', 'expected_output', 'expected_ret_code', 'expected_exception', 'expected_logs', 'folder'],
     [
         [
-            lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}) ,
+            lambda x: x.cmd('plan', 'var_to_output', no_color=IsFlagged, var={'test_var': 'test'}),
             # Expected output varies by terraform version
             ["doesn't need to do anything",               # Terraform < 0.10.7 (used in travis env)
                 "no\nactions need to be performed"],      # Terraform >= 0.10.7
@@ -69,7 +70,16 @@ CMD_CASES = [
             False,
             '',
             'var_to_output'
-        ]
+        ],
+        # test workspace command (commands with subcommand)
+        [
+            lambda x: x.cmd('workspace', 'show',  no_color=IsFlagged),
+            '',
+            0,
+            False,
+            'command: terraform workspace show -no-color',
+            ''
+        ],
     ]
 ]
 
@@ -100,6 +110,28 @@ def string_logger(request):
 
     request.addfinalizer(td)
     return lambda: str(log_stream.getvalue())
+
+
+@pytest.fixture()
+def workspace_setup_teardown():
+    """
+    Fixture used in workspace related tests
+
+    Create and tear down a workspace
+    *Use as a contextmanager*
+    """
+    @contextmanager
+    def wrapper(workspace_name, create=True, delete=True, *args, **kwargs):
+        tf = Terraform(working_dir=current_path)
+        tf.init()
+        if create:
+            tf.create_workspace(workspace_name, *args, **kwargs)
+        yield tf
+        if delete:
+            tf.set_workspace('default')
+            tf.delete_workspace(workspace_name)
+
+    yield wrapper
 
 
 class TestTerraform(object):
@@ -183,6 +215,17 @@ class TestTerraform(object):
         assert ret == 0
         assert expected_output in out.replace('\n', '').replace(' ', '')
         assert err == ''
+
+    def test_apply_with_var_file(self, string_logger):
+        tf = Terraform(working_dir=current_path)
+
+        tf.init()
+        tf.apply(var_file=os.path.join(current_path, 'tfvar_file', 'test.tfvars'))
+        logs = string_logger()
+        logs = logs.split('\n')
+        for log in logs:
+            if log.startswith('command: terraform apply'):
+                assert log.count('-var-file=') == 1
 
     @pytest.mark.parametrize(
         ['cmd', 'args', 'options'],
@@ -321,41 +364,94 @@ class TestTerraform(object):
         tf.import_cmd('aws_instance.foo', 'i-abc1234', no_color=IsFlagged)
         assert 'command: terraform import -no-color aws_instance.foo i-abc1234' in string_logger()
     
-    def test_create_workspace(self):
-        tf = Terraform(working_dir=current_path)
-        tf.init()
-        ret, out, err = tf.create_workspace('test')
-        tf.set_workspace('default')
-        tf.delete_workspace('test')
+    def test_create_workspace(self, workspace_setup_teardown):
+        workspace_name = 'test'
+        with workspace_setup_teardown(workspace_name, create=False) as tf:
+            ret, out, err = tf.create_workspace('test')
         assert ret == 0
         assert err == ''
 
-    def test_set_workspace(self):
-        tf = Terraform(working_dir=current_path)
-        tf.init()
-        tf.create_workspace('test')
-        tf.set_workspace('test')
-        tf.set_workspace('default')
-        ret, out, err = tf.delete_workspace('test')
+    def test_create_workspace_with_args(
+            self, workspace_setup_teardown, string_logger
+    ):
+        workspace_name = 'test'
+        state_file_path = os.path.join(current_path, 'test_tfstate_file2', 'terraform.tfstate')
+        with workspace_setup_teardown(workspace_name, create=False) as tf:
+            ret, out, err = tf.create_workspace('test', current_path, no_color=IsFlagged)
+
         assert ret == 0
         assert err == ''
 
-    def test_show_workspace(self):
-        tf = Terraform(working_dir=current_path)
-        tf.init()
-        tf.create_workspace('test')
-        ret, out, err = tf.show_workspace()
-        tf.set_workspace('default')
-        tf.delete_workspace('test')
+        logs = string_logger()
+        logs = logs.replace('\n', '')
+        expected_log = 'command: terraform workspace new -no-color test {}'.format(current_path)
+        assert expected_log in logs
+
+    def test_set_workspace(self, workspace_setup_teardown):
+        workspace_name = 'test'
+        with workspace_setup_teardown(workspace_name) as tf:
+            ret, out, err = tf.set_workspace(workspace_name)
         assert ret == 0
         assert err == ''
 
-    def test_delete_workspace(self):
-        tf = Terraform(working_dir=current_path)
-        tf.init()
-        tf.create_workspace('test')
-        tf.set_workspace('default')
-        ret, out, err = tf.delete_workspace('test')
-        tf.show_workspace()
+    def test_set_workspace_with_args(
+            self, workspace_setup_teardown, string_logger):
+        workspace_name = 'test'
+        with workspace_setup_teardown(workspace_name) as tf:
+            ret, out, err = tf.set_workspace(workspace_name, current_path, no_color=IsFlagged)
+
         assert ret == 0
         assert err == ''
+
+        logs = string_logger()
+        logs = logs.replace('\n', '')
+        expected_log = 'command: terraform workspace select -no-color test {}'.format(current_path)
+        assert expected_log in logs
+
+    def test_show_workspace(self, workspace_setup_teardown):
+        workspace_name = 'test'
+        with workspace_setup_teardown(workspace_name) as tf:
+            ret, out, err = tf.show_workspace()
+        assert ret == 0
+        assert err == ''
+
+    def test_show_workspace_with_no_color(
+            self, workspace_setup_teardown, string_logger
+    ):
+        workspace_name = 'test'
+        with workspace_setup_teardown(workspace_name) as tf:
+            ret, out, err = tf.show_workspace(no_color=IsFlagged)
+
+        assert ret == 0
+        assert err == ''
+
+        logs = string_logger()
+        logs = logs.replace('\n', '')
+        expected_log = 'command: terraform workspace show -no-color'
+        assert expected_log in logs
+
+    def test_delete_workspace(self, workspace_setup_teardown):
+        workspace_name = 'test'
+        with workspace_setup_teardown(workspace_name, delete=False) as tf:
+            tf.set_workspace('default')
+            ret, out, err = tf.delete_workspace(workspace_name)
+        assert ret == 0
+        assert err == ''
+
+    def test_delete_workspace_with_args(
+            self, workspace_setup_teardown, string_logger
+    ):
+        workspace_name = 'test'
+        with workspace_setup_teardown(workspace_name, delete=False) as tf:
+            tf.set_workspace('default')
+            ret, out, err = tf.delete_workspace(
+                workspace_name, current_path, force=IsFlagged,
+            )
+
+        assert ret == 0
+        assert err == ''
+
+        logs = string_logger()
+        logs = logs.replace('\n', '')
+        expected_log = 'command: terraform workspace delete -force test {}'.format(current_path)
+        assert expected_log in logs
