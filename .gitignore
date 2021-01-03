@@ -7,17 +7,5 @@
 /.pypirc
 /.tox/
 .dropbox
-env/
 Icon
 /pytestdebug.log
-.DS_Store
-
-# virtualenv
-.virtualenv/
-
-
-# Intellij
-.idea/
-
-# VSCode
-.vscode/

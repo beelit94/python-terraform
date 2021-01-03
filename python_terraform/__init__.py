@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# above is for compatibility of python2.7.11
+
 import subprocess
 import os
 import sys
@@ -8,10 +11,15 @@ import tempfile
 from python_terraform.tfstate import Tfstate
 
 
-log = logging.getLogger(__name__)
-log.addHandler(logging.NullHandler())
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
 
-COMMAND_WITH_SUBCOMMANDS = ['workspace']
+log = logging.getLogger(__name__)
+log.addHandler(NullHandler())
 
 
 class IsFlagged:
@@ -23,11 +31,10 @@ class IsNotFlagged:
 
 
 class TerraformCommandError(subprocess.CalledProcessError):
-    def __init__(self, ret_code, cmd, out, err):
-        super(TerraformCommandError, self).__init__(ret_code, cmd)
-        self.out = out
-        self.err = err
-
+  def __init__(self, ret_code, cmd, out, err):
+      super(TerraformCommandError, self).__init__(ret_code, cmd)
+      self.out = out
+      self.err = err
 
 class Terraform(object):
     """
@@ -42,7 +49,7 @@ class Terraform(object):
                  parallelism=None,
                  var_file=None,
                  terraform_bin_path=None,
-                 is_env_vars_included=True,
+                 is_env_vars_included=True, 
                  ):
         """
         :param working_dir: the folder of the working folder, if not given,
@@ -80,7 +87,7 @@ class Terraform(object):
             cmd_name = str(item)
             if cmd_name.endswith('_cmd'):
                 cmd_name = cmd_name[:-4]
-            log.debug('called with %r and %r' % (args, kwargs))
+            logging.debug('called with %r and %r' % (args, kwargs))
             return self.cmd(cmd_name, *args, **kwargs)
 
         return wrapper
@@ -198,10 +205,6 @@ class Terraform(object):
         """
         cmds = cmd.split()
         cmds = [self.terraform_bin_path] + cmds
-        if cmd in COMMAND_WITH_SUBCOMMANDS:
-            args = list(args)
-            subcommand = args.pop(0)
-            cmds.append(subcommand)
 
         for option, value in kwargs.items():
             if '_' in option:
@@ -220,13 +223,9 @@ class Terraform(object):
 
                 # since map type sent in string won't work, create temp var file for
                 # variables, and clean it up later
-                elif option == 'var':
-                    # We do not create empty var-files if there is no var passed.
-                    # An empty var-file would result in an error: An argument or block definition is required here
-                    if value:
-                        filename = self.temp_var_files.create(value)
-                        cmds += ['-var-file={0}'.format(filename)]
-
+                else:
+                    filename = self.temp_var_files.create(value)
+                    cmds += ['-var-file={0}'.format(filename)]
                     continue
 
             # simple flag,
@@ -245,7 +244,7 @@ class Terraform(object):
         cmds += args
         return cmds
 
-    def cmd(self, cmd, *args, verbose=False, **kwargs):
+    def cmd(self, cmd, *args, **kwargs):
         """
         run a terraform command, if success, will try to read state file
         :param cmd: command and sub-command of terraform, seperated with space
@@ -274,21 +273,15 @@ class Terraform(object):
         """
         capture_output = kwargs.pop('capture_output', True)
         raise_on_error = kwargs.pop('raise_on_error', False)
-        synchronous = kwargs.pop('synchronous', True)
         if capture_output is True:
             stderr = subprocess.PIPE
             stdout = subprocess.PIPE
-        elif capture_output == "framework":
-            stderr = None
-            stdout = None
         else:
             stderr = sys.stderr
             stdout = sys.stdout
 
         cmds = self.generate_cmd_string(cmd, *args, **kwargs)
         log.debug('command: {c}'.format(c=' '.join(cmds)))
-        if verbose:
-            print('command: `{c}`...'.format(c=' '.join(cmds)))
 
         working_folder = self.working_dir if self.working_dir else None
 
@@ -296,16 +289,12 @@ class Terraform(object):
         if self.is_env_vars_included:
             environ_vars = os.environ.copy()
 
-        with subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
-                              cwd=working_folder, env=environ_vars) as p:
-            if not synchronous:
-                return p, None, None
+        p = subprocess.Popen(cmds, stdout=stdout, stderr=stderr,
+                             cwd=working_folder, env=environ_vars)
 
-            if verbose and p.stdout:
-                print("live output: \"\"\"")
-                for line in p.stdout:
-                    print("    %s" % str(line, "utf-8").rstrip())
-                print("\"\"\"")
+        synchronous = kwargs.pop('synchronous', True)
+        if not synchronous:
+            return p, None, None
 
         out, err = p.communicate()
         ret_code = p.returncode
@@ -314,9 +303,9 @@ class Terraform(object):
         if ret_code == 0:
             self.read_state_file()
         else:
-            log.warning('error: {e}'.format(e=err))
+            log.warn('error: {e}'.format(e=err))
 
-        # self.temp_var_files.clean_up()
+        self.temp_var_files.clean_up()
         if capture_output is True:
             out = out.decode('utf-8')
             err = err.decode('utf-8')
@@ -329,6 +318,7 @@ class Terraform(object):
                 ret_code, ' '.join(cmds), out=out, err=err)
 
         return ret_code, out, err
+
 
     def output(self, *args, **kwargs):
         """
@@ -358,7 +348,7 @@ class Terraform(object):
         name_provided = (len(args) > 0)
         kwargs['json'] = IsFlagged
         if not kwargs.get('capture_output', True) is True:
-            raise ValueError('capture_output is required for this method')
+          raise ValueError('capture_output is required for this method')
 
         ret, out, err = self.output_cmd(*args, **kwargs)
 
@@ -398,40 +388,40 @@ class Terraform(object):
 
         self.tfstate = Tfstate.load_file(file_path)
 
-    def set_workspace(self, workspace, *args, **kwargs):
+    def set_workspace(self, workspace):
         """
         set workspace
         :param workspace: the desired workspace.
         :return: status
         """
 
-        return self.cmd('workspace', 'select', workspace, *args, **kwargs)
+        return self.cmd('workspace' ,'select', workspace)  
 
-    def create_workspace(self, workspace, *args, **kwargs):
+    def create_workspace(self, workspace):
         """
         create workspace
         :param workspace: the desired workspace.
         :return: status
         """
 
-        return self.cmd('workspace', 'new', workspace, *args, **kwargs)
+        return self.cmd('workspace', 'new', workspace)     
 
-    def delete_workspace(self, workspace, *args, **kwargs):
+    def delete_workspace(self, workspace):
         """
         delete workspace
         :param workspace: the desired workspace.
         :return: status
         """
 
-        return self.cmd('workspace', 'delete', workspace, *args, **kwargs)
+        return self.cmd('workspace', 'delete', workspace)    
 
-    def show_workspace(self, **kwargs):
+    def show_workspace(self):
         """
-        show workspace, this command does not need the [DIR] part
+        show workspace
         :return: workspace
         """
 
-        return self.cmd('workspace', 'show', **kwargs)
+        return self.cmd('workspace', 'show')  
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.temp_var_files.clean_up()
