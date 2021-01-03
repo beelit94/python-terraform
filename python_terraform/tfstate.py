@@ -2,8 +2,8 @@
 # above is for compatibility of python2.7.11
 
 import json
-import os
 import logging
+import os
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class Tfstate(object):
         """
         Read the tfstate file and load its contents, parses then as JSON and put the result into the object
         """
-        log.debug('read data from {0}'.format(file_path))
+        log.debug("read data from {0}".format(file_path))
         if os.path.exists(file_path):
             with open(file_path) as f:
                 json_data = json.load(f)
@@ -29,6 +29,6 @@ class Tfstate(object):
             tf_state.tfstate_file = file_path
             return tf_state
 
-        log.debug('{0} is not exist'.format(file_path))
+        log.debug("{0} is not exist".format(file_path))
 
         return Tfstate()

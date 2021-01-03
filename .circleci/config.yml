@@ -8,11 +8,11 @@ jobs:
       - checkout
       - run:
           name: run black
-          command: black --check .
+          command: black --version && black --check --diff .
       - run:
           name: run isort
           command: |
-            isort --check-only ./
+            isort --check-only --diff ./
 
 workflows:
   main:
