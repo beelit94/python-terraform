@@ -1,0 +1,20 @@
+version: 2.1
+
+jobs:
+  python_lint:
+    docker:
+      - image: evanfabry/python-terraform:circleci
+    steps:
+      - checkout
+      - run:
+          name: run black
+          command: black --check .
+      - run:
+          name: run isort
+          command: |
+            isort --check-only ./
+
+workflows:
+  main:
+    jobs:
+      - python_lint
