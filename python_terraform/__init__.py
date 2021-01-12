@@ -322,8 +322,9 @@ class Terraform(object):
                     print("    %s" % str(line, "utf-8").rstrip())
                 print('"""')
 
-        out, err = p.communicate()
-        ret_code = p.returncode
+            out, err = p.communicate()
+            ret_code = p.returncode
+
         log.debug("output: {o}".format(o=out))
 
         if ret_code == 0:
