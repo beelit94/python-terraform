@@ -1,6 +1,5 @@
 default_language_version:
             python: python3.6
-fail_fast: true
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.1.0  # v2.1.0
