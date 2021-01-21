@@ -5,8 +5,10 @@ import re
 import shutil
 from contextlib import contextmanager
 from io import StringIO
+from typing import Callable
 
 import pytest
+
 from python_terraform import IsFlagged, IsNotFlagged, Terraform, TerraformCommandError
 
 logging.basicConfig(level=logging.DEBUG)
@@ -113,7 +115,7 @@ def fmt_test_file(request):
 
 
 @pytest.fixture()
-def string_logger(request):
+def string_logger(request) -> Callable[..., str]:
     log_stream = StringIO()
     handler = logging.StreamHandler(log_stream)
     root_logger.addHandler(handler)
@@ -150,13 +152,13 @@ def workspace_setup_teardown():
 
 
 class TestTerraform(object):
-    def teardown_method(self, method):
+    def teardown_method(self, _) -> None:
         """ teardown any state that was previously setup with a setup_method
         call.
         """
         exclude = ["test_tfstate_file", "test_tfstate_file2", "test_tfstate_file3"]
 
-        def purge(dir, pattern):
+        def purge(dir: str, pattern: str) -> None:
             for root, dirnames, filenames in os.walk(dir):
                 dirnames[:] = [d for d in dirnames if d not in exclude]
                 for filename in fnmatch.filter(filenames, pattern):
@@ -172,7 +174,7 @@ class TestTerraform(object):
         purge(".", FILE_PATH_WITH_SPACE_AND_SPACIAL_CHARS)
 
     @pytest.mark.parametrize(["method", "expected"], STRING_CASES)
-    def test_generate_cmd_string(self, method, expected):
+    def test_generate_cmd_string(self, method: Callable[..., str], expected: str):
         tf = Terraform(working_dir=current_path)
         result = method(tf)
 
@@ -183,37 +185,27 @@ class TestTerraform(object):
     @pytest.mark.parametrize(*CMD_CASES)
     def test_cmd(
         self,
-        method,
-        expected_output,
-        expected_ret_code,
-        expected_exception,
-        expected_logs,
-        string_logger,
+        method: Callable[..., str],
+        expected_output: str,
+        expected_ret_code: int,
+        expected_exception: bool,
+        expected_logs: str,
+        string_logger: Callable[..., str],
         folder,
     ):
         tf = Terraform(working_dir=current_path)
         tf.init(folder)
         try:
-            ret, out, err = method(tf)
+            ret, out, _ = method(tf)
             assert not expected_exception
         except TerraformCommandError as e:
             assert expected_exception
             ret = e.returncode
             out = e.out
-            err = e.err
 
         logs = string_logger()
         logs = logs.replace("\n", "")
-        if isinstance(expected_output, list):
-            ok = False
-            for xo in expected_output:
-                if xo in out:
-                    ok = True
-                    break
-            if not ok:
-                assert expected_output[0] in out
-        else:
-            assert expected_output in out
+        assert expected_output in out
         assert expected_ret_code == ret
         assert expected_logs in logs
 
