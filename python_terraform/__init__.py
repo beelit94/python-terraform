@@ -315,9 +315,6 @@ class Terraform(object):
         :return: ret_code, out, err
         """
         capture_output = kwargs.pop("capture_output", True)
-        assert (
-            not verbose or not capture_output
-        ), "can't use both verbose and capture_output"
         raise_on_error = kwargs.pop("raise_on_error", False)
         synchronous = kwargs.pop("synchronous", True)
         if capture_output is True:
@@ -347,10 +344,12 @@ class Terraform(object):
             if not synchronous:
                 return p, None, None
 
+            live_out = []
             if verbose and p.stdout:
                 print('live output: """')
                 for line in p.stdout:
-                    print("    %s" % str(line, "utf-8").rstrip())
+                    live_out.append(str(line, "utf-8").rstrip())
+                    print(f"    {live_out[-1]}")
                 print('"""')
 
             out, err = p.communicate()
@@ -364,7 +363,10 @@ class Terraform(object):
             log.warning("error: {e}".format(e=err))
 
         # self.temp_var_files.clean_up()
-        if capture_output is True:
+        if verbose and capture_output:
+            out = "\n".join(live_out)
+            err = err.decode("utf-8")
+        elif capture_output:
             out = out.decode("utf-8")
             err = err.decode("utf-8")
         else:
