@@ -154,6 +154,34 @@ class Terraform(object):
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("plan", *args, **options)
 
+    def refresh(self, dir_or_plan=None, **kwargs):
+        """
+        refer to https://www.terraform.io/docs/commands/refresh.html
+        :param dir_or_plan: relative path to plan/folder
+        :param kwargs: options
+        :return: ret_code, stdout, stderr
+        """
+        options = kwargs
+        options = self._generate_default_options(options)
+        options["capture_output"] = False
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd("refresh", *args, **options)
+
+    def state_list(self, dir_or_plan=None, **kwargs):
+        """
+        refer to https://www.terraform.io/docs/commands/refresh.html  # TODO: fix this
+        :param dir_or_plan: relative path to plan/folder
+        :param kwargs: options
+        :return: ret_code, stdout, stderr
+        """
+        options = kwargs
+        options = self._generate_default_options(options)
+        del options["input"]
+        del options["out"]
+        options["capture_output"] = True
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd("state list", *args, **options)
+
     def init(
         self,
         dir_or_plan=None,
@@ -287,6 +315,9 @@ class Terraform(object):
         :return: ret_code, out, err
         """
         capture_output = kwargs.pop("capture_output", True)
+        assert (
+            not verbose or not capture_output
+        ), "can't use both verbose and capture_output"
         raise_on_error = kwargs.pop("raise_on_error", False)
         synchronous = kwargs.pop("synchronous", True)
         if capture_output is True:
