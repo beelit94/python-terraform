@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from python_terraform.tfstate import Tfstate
 
@@ -33,6 +33,7 @@ class TerraformCommandError(subprocess.CalledProcessError):
         super(TerraformCommandError, self).__init__(ret_code, cmd)
         self.out = out
         self.err = err
+        logger.error("Error with command %s. Reason: %s", self.cmd, self.err)
 
 
 class Terraform:
@@ -46,7 +47,7 @@ class Terraform:
         working_dir: Optional[str] = None,
         targets: Optional[Sequence[str]] = None,
         state: Optional[str] = None,
-        variables: Optional[Sequence[str]] = None,
+        variables: Optional[Dict[str, str]] = None,
         parallelism: Optional[str] = None,
         var_file: Optional[str] = None,
         terraform_bin_path: Optional[str] = None,
@@ -114,28 +115,30 @@ class Terraform:
         """
         if not skip_plan:
             return self.plan(dir_or_plan=dir_or_plan, **kwargs)
-        default = kwargs
+        default = kwargs.copy()
         default["input"] = input
         default["no_color"] = no_color
-        default["auto-approve"] = True
+        default["auto-approve"] = True  # a False value will require an input
         option_dict = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("apply", *args, **option_dict)
 
-    def _generate_default_args(self, dir_or_plan) -> Sequence[str]:
+    def _generate_default_args(self, dir_or_plan: Optional[str]) -> Sequence[str]:
         return [dir_or_plan] if dir_or_plan else []
 
-    def _generate_default_options(self, input_options):
-        option_dict = dict()
-        option_dict["state"] = self.state
-        option_dict["target"] = self.targets
-        option_dict["var"] = self.variables
-        option_dict["var_file"] = self.var_file
-        option_dict["parallelism"] = self.parallelism
-        option_dict["no_color"] = IsFlagged
-        option_dict["input"] = False
-        option_dict.update(input_options)
-        return option_dict
+    def _generate_default_options(
+        self, input_options: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        return {
+            "state": self.state,
+            "target": self.targets,
+            "var": self.variables,
+            "var_file": self.var_file,
+            "parallelism": self.parallelism,
+            "no_color": IsFlagged,
+            "input": False,
+            **input_options,
+        }
 
     def destroy(
         self,
@@ -148,7 +151,7 @@ class Terraform:
         force/no-color option is flagged by default
         :return: ret_code, stdout, stderr
         """
-        default = kwargs
+        default = kwargs.copy()
         default["force"] = force
         options = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
@@ -167,7 +170,7 @@ class Terraform:
         :param kwargs: options
         :return: ret_code, stdout, stderr
         """
-        options = kwargs
+        options = kwargs.copy()
         options["detailed_exitcode"] = detailed_exitcode
         options = self._generate_default_options(options)
         args = self._generate_default_args(dir_or_plan)
@@ -196,10 +199,14 @@ class Terraform:
         :param kwargs: options
         :return: ret_code, stdout, stderr
         """
-        options = kwargs
-        options["backend_config"] = backend_config
-        options["reconfigure"] = reconfigure
-        options["backend"] = backend
+        options = kwargs.copy()
+        options.update(
+            {
+                "backend_config": backend_config,
+                "reconfigure": reconfigure,
+                "backend": backend,
+            }
+        )
         options = self._generate_default_options(options)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("init", *args, **options)
@@ -281,7 +288,7 @@ class Terraform:
         cmd: str,
         *args,
         capture_output: Union[bool, str] = True,
-        raise_on_error: bool = False,
+        raise_on_error: bool = True,
         synchronous: bool = True,
         **kwargs,
     ) -> CommandOutput:
@@ -322,7 +329,7 @@ class Terraform:
             stdout = sys.stdout
 
         cmds = self.generate_cmd_string(cmd, *args, **kwargs)
-        logger.debug("Command: %s", " ".join(cmds))
+        logger.info("Command: %s", " ".join(cmds))
 
         working_folder = self.working_dir if self.working_dir else None
 
@@ -339,7 +346,7 @@ class Terraform:
 
         out, err = p.communicate()
         ret_code = p.returncode
-        logger.debug("output: %s", out)
+        logger.info("output: %s", out)
 
         if ret_code == 0:
             self.read_state_file()

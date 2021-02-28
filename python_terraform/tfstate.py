@@ -28,6 +28,6 @@ class Tfstate:
             tf_state.tfstate_file = file_path
             return tf_state
 
-        logger.debug("%s is not exist", file_path)
+        logger.debug("%s does not exist", file_path)
 
         return Tfstate()
