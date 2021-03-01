@@ -7,12 +7,13 @@ except ImportError:
     from distutils.core import setup
 
 dependencies = []
-module_name = 'python-terraform'
-short_description = 'This is a python module provide a wrapper ' \
-                    'of terraform command line tool'
+module_name = "python-terraform"
+short_description = (
+    "This is a python module provide a wrapper " "of terraform command line tool"
+)
 
 try:
-    with open('DESCRIPTION.rst') as f:
+    with open("DESCRIPTION.rst") as f:
         long_description = f.read()
 except IOError:
     long_description = short_description
@@ -20,36 +21,37 @@ except IOError:
 
 setup(
     name=module_name,
-    version='0.10.2',
-    url='https://github.com/beelit94/python-terraform',
-    license='MIT',
-    author='Freddy Tan',
-    author_email='beelit94@gmail.com',
+    version="0.14.0",
+    url="https://github.com/beelit94/python-terraform",
+    license="MIT",
+    author="Freddy Tan",
+    author_email="beelit94@gmail.com",
     description=short_description,
     long_description=long_description,
-    packages=['python_terraform'],
+    packages=["python_terraform"],
     package_data={},
-    platforms='any',
+    platforms="any",
     install_requires=dependencies,
+    tests_require=["pytest"],
+    python_requires=">=3.6",
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
         # 'Development Status :: 3 - Alpha',
-        'Development Status :: 4 - Beta',
+        "Development Status :: 4 - Beta",
         # 'Development Status :: 5 - Production/Stable',
         # 'Development Status :: 6 - Mature',
         # 'Development Status :: 7 - Inactive',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: POSIX',
-        'Operating System :: MacOS',
-        'Operating System :: Unix',
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: POSIX",
+        "Operating System :: MacOS",
+        "Operating System :: Unix",
         # 'Operating System :: Windows',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
 )

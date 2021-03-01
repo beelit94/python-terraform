@@ -1,0 +1,27 @@
+default_language_version:
+            python: python3.6
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.1.0  # v2.1.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-docstring-first
+    -   id: check-json
+    -   id: check-merge-conflict
+    -   id: check-toml
+    -   id: check-yaml
+    -   id: debug-statements
+    -   id: requirements-txt-fixer
+-   repo: https://github.com/pycqa/isort
+    rev: 5.5.2
+    hooks:
+    -   id: isort
+-   repo: https://github.com/lovesegfault/beautysh
+    rev: 6.0.1
+    hooks:
+    -   id: beautysh
+-   repo: https://github.com/psf/black
+    rev: 19.10b0
+    hooks:
+    -   id: black
