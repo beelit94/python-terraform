@@ -342,7 +342,7 @@ class Terraform:
         )
 
         if not synchronous:
-            return None, None, None
+            return p, None, None
 
         out, err = p.communicate()
         ret_code = p.returncode
