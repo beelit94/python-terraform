@@ -25,7 +25,7 @@ class IsNotFlagged(TerraformFlag):
     pass
 
 
-CommandOutput = Tuple[Optional[int], Optional[str], Optional[str]]
+CommandOutput = Tuple[Union[int, subprocess.Popen[bytes], None], Optional[str], Optional[str]]
 
 
 class TerraformCommandError(subprocess.CalledProcessError):
