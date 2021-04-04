@@ -157,6 +157,26 @@ class Terraform:
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("destroy", *args, **options)
 
+    def validate(
+        self,
+        dir: Optional[str] = None,
+        json: Type[TerraformFlag] = IsNotFlagged,
+        no_color: Type[TerraformFlag] = IsNotFlagged,
+        **kwargs,
+    ) -> CommandOutput:
+        """Refer to https://terraform.io/docs/commands/validate.html
+
+        :param json: output is produced in a machine-readable JSON format
+        :param no_color: disable color of stdout
+        :param kwargs: same as kwags in method 'cmd'
+        :returns return_code, stdout, stderr
+        """
+        option_dict = kwargs.copy()
+        option_dict["json"] = json
+        option_dict["no_color"] = no_color
+        args = self._generate_default_args(dir)
+        return self.cmd("validate", *args, **option_dict)
+
     def plan(
         self,
         dir_or_plan: Optional[str] = None,
