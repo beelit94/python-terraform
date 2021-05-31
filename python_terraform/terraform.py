@@ -460,8 +460,20 @@ class Terraform:
         """List of workspaces
         
         :return: workspaces
+        :example:
+            >>> tf = Terraform()
+            >>> tf.list_workspace()
+            ['default', 'test']
         """
-        return list(filter(lambda x: len(x) > 0, map(lambda x: x.strip('*').strip(), self.cmd("workspace", "list")[1].split())))
+        return list(
+            filter(
+                lambda x: len(x) > 0,
+                map(
+                    lambda x: x.strip('*').strip(),
+                    (self.cmd("workspace", "list")[1] or '').split()
+                )
+            )
+        )
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.temp_var_files.clean_up()
