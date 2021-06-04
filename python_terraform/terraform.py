@@ -467,9 +467,9 @@ class Terraform:
         """
         return list(
             filter(
-                lambda x: len(x) > 0,
+                lambda workspace: len(workspace) > 0,
                 map(
-                    lambda x: x.strip('*').strip(),
+                    lambda workspace: workspace.strip('*').strip(),
                     (self.cmd("workspace", "list")[1] or '').split()
                 )
             )
