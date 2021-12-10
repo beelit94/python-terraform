@@ -79,7 +79,7 @@ simply pass the string to arguments of the method, for example,
 
 #### Terraform Output
 
-By default, stdout and stderr are captured and returned. This causes the application to appear to hang. To print terraform output in real time, provide the `capture_output` option with any value other than `None`. This will cause the output of terraform to be printed to the terminal in real time. The value of `stdout` and `stderr` below will be `None`.
+By default, stdout and stderr are captured and returned. This causes the application to appear to hang. To print terraform output in real time, provide the `capture_output` option with any value other than `True`. This will cause the output of terraform to be printed to the terminal in real time. The value of `stdout` and `stderr` below will be `None`.
 
 
     from python_terraform import Terraform
