@@ -143,7 +143,7 @@ class Terraform:
     def destroy(
         self,
         dir_or_plan: Optional[str] = None,
-        force: Type[TerraformFlag] = IsFlagged,
+        auto_approve: Type[TerraformFlag] = IsFlagged,
         **kwargs,
     ) -> CommandOutput:
         """Refer to https://www.terraform.io/docs/commands/destroy.html
@@ -152,7 +152,7 @@ class Terraform:
         :return: ret_code, stdout, stderr
         """
         default = kwargs.copy()
-        default["force"] = force
+        default["auto-approve"] = auto_approve
         options = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("destroy", *args, **options)
