@@ -351,7 +351,7 @@ class Terraform:
         if ret_code == 0:
             self.read_state_file()
         else:
-            logger.warning("error: %s", err)
+            logger.warning("error: %s", err.decode("utf-8"))
 
         self.temp_var_files.clean_up()
         if capture_output is True:
