@@ -31,4 +31,4 @@ jobs:
         pip install -r requirements_dev.txt
     - name: Test with pytest
       run: |
-        PYTHONPATH=. python -m pytest -v -s --cache-clear --cov=python-terraform tests
+        PYTHONPATH=. python -m pytest -v -s --cache-clear --cov=python-terraform test
