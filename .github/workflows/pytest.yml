@@ -28,8 +28,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install wheel flake8 pytest pytest-cov
-        pip install -r requirements.txt
+        pip install -r requirements_dev.txt
     - name: Test with pytest
       run: |
         PYTHONPATH=. python -m pytest -v -s --cache-clear --cov=python-terraform tests
