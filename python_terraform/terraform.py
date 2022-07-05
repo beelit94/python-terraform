@@ -118,10 +118,36 @@ class Terraform:
         default = kwargs.copy()
         default["input"] = input
         default["no_color"] = no_color
-        default["auto-approve"] = True  # a False value will require an input
+        # default["auto-approve"] = True  # a False value will require an input
+        default["auto-approve"] = IsFlagged  # a False value will require an input
         option_dict = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("apply", *args, **option_dict)
+
+    def show(
+        self,
+        dir_or_plan: Optional[str] = None,
+        no_color: Type[TerraformFlag] = IsFlagged,
+        **kwargs,
+    ) -> CommandOutput:
+        """Refer to https://terraform.io/docs/commands/apply.html
+
+        no-color is flagged by default
+        :param no_color: disable color of stdout
+        :param input: disable prompt for a missing variable
+        :param dir_or_plan: folder relative to working folder
+        :param skip_plan: force apply without plan (default: false)
+        :param kwargs: same as kwags in method 'cmd'
+        :returns return_code, stdout, stderr
+        """
+        kwargs["json"] = IsFlagged
+        option_dict = {
+            "no_color": no_color,
+            "json": IsFlagged,
+            **kwargs
+        }
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd("show", *args, **option_dict)
 
     def _generate_default_args(self, dir_or_plan: Optional[str]) -> Sequence[str]:
         return [dir_or_plan] if dir_or_plan else []
@@ -152,7 +178,8 @@ class Terraform:
         :return: ret_code, stdout, stderr
         """
         default = kwargs.copy()
-        default["force"] = force
+        default["auto-approve"] = force
+        # default["auto-approve"] = IsFlagged
         options = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("destroy", *args, **options)
@@ -346,6 +373,8 @@ class Terraform:
 
         out, err = p.communicate()
         ret_code = p.returncode
+        if out and type(out) is not str:
+            out = out.decode()
         logger.info("output: %s", out)
 
         if ret_code == 0:
@@ -355,8 +384,10 @@ class Terraform:
 
         self.temp_var_files.clean_up()
         if capture_output is True:
-            out = out.decode()
-            err = err.decode()
+            if out and type(out) is not str:
+                out = out.decode()
+            if err and type(err) is not str:
+                err = err.decode()
         else:
             out = None
             err = None
@@ -449,12 +480,22 @@ class Terraform:
         """
         return self.cmd("workspace", "delete", workspace, *args, **kwargs)
 
-    def show_workspace(self, **kwargs) -> CommandOutput:
+    def show_workspace(self, raw_out=True, **kwargs) -> CommandOutput:
         """Show workspace, this command does not need the [DIR] part
 
         :return: workspace
         """
-        return self.cmd("workspace", "show", **kwargs)
+        ret, out, err = self.cmd("workspace", "show", **kwargs)
+        if not raw_out and out:
+            out = out.strip()
+        return ret, out, err
+
+    def list_workspace(self, **kwargs) -> CommandOutput:
+        """Show workspace, this command does not need the [DIR] part
+
+        :return: workspace
+        """
+        return self.cmd("workspace", "list", **kwargs)
 
     def list_workspace(self) -> List[str]:
         """List of workspaces
