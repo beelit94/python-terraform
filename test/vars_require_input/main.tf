@@ -1,16 +1,16 @@
 variable "ami" {
   default = "foo"
-  type    = "string"
+  type    = string
 }
 
 variable "list" {
   default = []
-  type    = "list"
+  type    = list
 }
 
 variable "map" {
   default = {}
-  type    = "map"
+  type    = map
 }
 
 resource "aws_instance" "bar" {
