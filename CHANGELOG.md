@@ -17,3 +17,8 @@
 ## [0.10.1]
 1. [#48] adding extension for temp file to adopt the change in terraform 0.12.0
 1. [#49] add workspace support
+
+## [1.0.1]
+1. adding option to output the latest cmd
+1. added refresh command
+1. intenden to work with tf1.0

@@ -1,16 +1,17 @@
+# terraform
 *.tfstate
 *.tfstate.backup
+
+# python
 *.pyc
 *.egg-info
-.idea
 .cache
+__pycache__
 /.pypirc
-/.tox/
-.dropbox
-env/
-Icon
+dist/
+build/
 /pytestdebug.log
-.DS_Store
+.pytestdebug.log
 
 # virtualenv
 .virtualenv/
@@ -18,8 +19,17 @@ venv/
 
 
 # Intellij
+.idea
 .idea/
 
 # VSCode
 .vscode/
 pyrightconfig.json
+tmp.txt
+
+# other
+.dropbox
+.DS_Store
+/.tox/
+env/
+Icon

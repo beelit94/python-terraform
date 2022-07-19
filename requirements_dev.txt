@@ -1,4 +1,11 @@
-wheel
-flake8
-pytest
-pytest-cov
+coverage==5.3
+flake8==3.8.4
+flake8-polyfill==1.0.2
+mypy==0.790
+mypy-extensions==0.4.3
+pycodestyle==2.6.0
+pyflakes==2.2.0
+pylint==2.6.0
+pytest==6.1.2
+pytest-cov==2.10.1
+pytest-datafiles==2.0

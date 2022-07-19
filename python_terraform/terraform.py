@@ -52,6 +52,7 @@ class Terraform:
         var_file: Optional[str] = None,
         terraform_bin_path: Optional[str] = None,
         is_env_vars_included: bool = True,
+        terraform_version: Optional[float] = 0.13
     ):
         """
         :param working_dir: the folder of the working folder, if not given,
@@ -78,6 +79,7 @@ class Terraform:
         self.terraform_bin_path = (
             terraform_bin_path if terraform_bin_path else "terraform"
         )
+        self.terraform_version = terraform_version
         self.var_file = var_file
         self.temp_var_files = VariableFiles()
 
@@ -85,15 +87,7 @@ class Terraform:
         self.tfstate = None
         self.read_state_file(self.state)
 
-    def __getattr__(self, item: str) -> Callable:
-        def wrapper(*args, **kwargs):
-            cmd_name = str(item)
-            if cmd_name.endswith("_cmd"):
-                cmd_name = cmd_name[:-4]
-            logger.debug("called with %r and %r", args, kwargs)
-            return self.cmd(cmd_name, *args, **kwargs)
-
-        return wrapper
+        self.latest_cmd = ''
 
     def apply(
         self,
@@ -115,30 +109,38 @@ class Terraform:
         """
         if not skip_plan:
             return self.plan(dir_or_plan=dir_or_plan, **kwargs)
+        global_opts = self._generate_default_general_options(dir_or_plan)
         default = kwargs.copy()
         default["input"] = input
         default["no_color"] = no_color
         default["auto-approve"] = True  # a False value will require an input
         option_dict = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
-        return self.cmd("apply", *args, **option_dict)
+        return self.cmd(global_opts, "apply", *args, **option_dict)
 
-    def _generate_default_args(self, dir_or_plan: Optional[str]) -> Sequence[str]:
-        return [dir_or_plan] if dir_or_plan else []
+    def refresh(
+        self,
+        dir_or_plan: Optional[str] = None,
+        input: bool = False,
+        no_color: Type[TerraformFlag] = IsFlagged,
+        **kwargs,
+    ) -> CommandOutput:
+        """Refer to https://terraform.io/docs/commands/refresh.html
 
-    def _generate_default_options(
-        self, input_options: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        return {
-            "state": self.state,
-            "target": self.targets,
-            "var": self.variables,
-            "var_file": self.var_file,
-            "parallelism": self.parallelism,
-            "no_color": IsFlagged,
-            "input": False,
-            **input_options,
-        }
+        no-color is flagged by default
+        :param no_color: disable color of stdout
+        :param input: disable prompt for a missing variable
+        :param dir_or_plan: folder relative to working folder
+        :param kwargs: same as kwags in method 'cmd'
+        :returns return_code, stdout, stderr
+        """
+        global_opts = self._generate_default_general_options(dir_or_plan)
+        default = kwargs.copy()
+        default["input"] = input
+        default["no_color"] = no_color
+        option_dict = self._generate_default_options(default)
+        args = self._generate_default_args(dir_or_plan)
+        return self.cmd(global_opts, "refresh", *args, **option_dict)
 
     def destroy(
         self,
@@ -151,11 +153,15 @@ class Terraform:
         force/no-color option is flagged by default
         :return: ret_code, stdout, stderr
         """
+        global_opts = self._generate_default_general_options(dir_or_plan)
         default = kwargs.copy()
-        default["force"] = force
+        # force is no longer a flag in version >= 1.0
+        if self.terraform_version < 1.0:
+            default["force"] = force
+        default["auto-approve"] = True
         options = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
-        return self.cmd("destroy", *args, **options)
+        return self.cmd(global_opts, "destroy", *args, **options)
 
     def plan(
         self,
@@ -170,11 +176,12 @@ class Terraform:
         :param kwargs: options
         :return: ret_code, stdout, stderr
         """
+        global_opts = self._generate_default_general_options(dir_or_plan)
         options = kwargs.copy()
         options["detailed_exitcode"] = detailed_exitcode
         options = self._generate_default_options(options)
         args = self._generate_default_args(dir_or_plan)
-        return self.cmd("plan", *args, **options)
+        return self.cmd(global_opts, "plan", *args, **options)
 
     def init(
         self,
@@ -208,10 +215,11 @@ class Terraform:
             }
         )
         options = self._generate_default_options(options)
+        global_opts = self._generate_default_general_options(dir_or_plan)
         args = self._generate_default_args(dir_or_plan)
-        return self.cmd("init", *args, **options)
+        return self.cmd(global_opts, "init", *args, **options)
 
-    def generate_cmd_string(self, cmd: str, *args, **kwargs) -> List[str]:
+    def generate_cmd_string(self, global_options: Dict[str, Any], cmd: str, *args, **kwargs) -> List[str]:
         """For any generate_cmd_string doesn't written as public method of Terraform
 
         examples:
@@ -234,57 +242,23 @@ class Terraform:
         :param kwargs: same as kwags in method 'cmd'
         :return: string of valid terraform command
         """
-        cmds = cmd.split()
-        cmds = [self.terraform_bin_path] + cmds
+        cmds = [self.terraform_bin_path]
+        cmds += self._generate_cmd_options(**global_options)
+        cmds += cmd.split()
         if cmd in COMMAND_WITH_SUBCOMMANDS:
             args = list(args)
             subcommand = args.pop(0)
             cmds.append(subcommand)
 
-        for option, value in kwargs.items():
-            if "_" in option:
-                option = option.replace("_", "-")
-
-            if isinstance(value, list):
-                for sub_v in value:
-                    cmds += [f"-{option}={sub_v}"]
-                continue
-
-            if isinstance(value, dict):
-                if "backend-config" in option:
-                    for bk, bv in value.items():
-                        cmds += [f"-backend-config={bk}={bv}"]
-                    continue
-
-                # since map type sent in string won't work, create temp var file for
-                # variables, and clean it up later
-                elif option == "var":
-                    # We do not create empty var-files if there is no var passed.
-                    # An empty var-file would result in an error: An argument or block definition is required here
-                    if value:
-                        filename = self.temp_var_files.create(value)
-                        cmds += [f"-var-file={filename}"]
-
-                    continue
-
-            # simple flag,
-            if value is IsFlagged:
-                cmds += [f"-{option}"]
-                continue
-
-            if value is None or value is IsNotFlagged:
-                continue
-
-            if isinstance(value, bool):
-                value = "true" if value else "false"
-
-            cmds += [f"-{option}={value}"]
+        cmds += self._generate_cmd_options(**kwargs)
 
         cmds += args
+        self.latest_cmd = ' '.join(cmds)
         return cmds
 
     def cmd(
         self,
+        global_opts: Dict[str, Any],
         cmd: str,
         *args,
         capture_output: Union[bool, str] = True,
@@ -328,7 +302,7 @@ class Terraform:
             stderr = sys.stderr
             stdout = sys.stdout
 
-        cmds = self.generate_cmd_string(cmd, *args, **kwargs)
+        cmds = self.generate_cmd_string(global_opts, cmd, *args, **kwargs)
         logger.info("Command: %s", " ".join(cmds))
 
         working_folder = self.working_dir if self.working_dir else None
@@ -367,7 +341,7 @@ class Terraform:
         return ret_code, out, err
 
     def output(
-        self, *args, capture_output: bool = True, **kwargs
+        self, dir_or_plan: Optional[str] = None, *args, capture_output: bool = True, **kwargs
     ) -> Union[None, str, Dict[str, str], Dict[str, Dict[str, str]]]:
         """Refer https://www.terraform.io/docs/commands/output.html
 
@@ -395,7 +369,10 @@ class Terraform:
         if capture_output is False:
             raise ValueError("capture_output is required for this method")
 
-        ret, out, _ = self.output_cmd(*args, **kwargs)
+        global_opts = self._generate_default_general_options(dir_or_plan)
+        ret, out, _ = self.cmd(global_opts, "output", *args, **kwargs)
+
+        # ret, out, _ = self.output_cmd(global_opts, *args, **kwargs)
 
         if ret:
             return None
@@ -431,7 +408,8 @@ class Terraform:
         :param workspace: the desired workspace.
         :return: status
         """
-        return self.cmd("workspace", "select", workspace, *args, **kwargs)
+        global_opts = self._generate_default_general_options(False)
+        return self.cmd(global_opts, "workspace", "select", workspace, *args, **kwargs)
 
     def create_workspace(self, workspace, *args, **kwargs) -> CommandOutput:
         """Create workspace
@@ -439,7 +417,8 @@ class Terraform:
         :param workspace: the desired workspace.
         :return: status
         """
-        return self.cmd("workspace", "new", workspace, *args, **kwargs)
+        global_opts = self._generate_default_general_options(False)
+        return self.cmd(global_opts, "workspace", "new", workspace, *args, **kwargs)
 
     def delete_workspace(self, workspace, *args, **kwargs) -> CommandOutput:
         """Delete workspace
@@ -447,18 +426,20 @@ class Terraform:
         :param workspace: the desired workspace.
         :return: status
         """
-        return self.cmd("workspace", "delete", workspace, *args, **kwargs)
+        global_opts = self._generate_default_general_options(False)
+        return self.cmd(global_opts, "workspace", "delete", workspace, *args, **kwargs)
 
     def show_workspace(self, **kwargs) -> CommandOutput:
         """Show workspace, this command does not need the [DIR] part
 
         :return: workspace
         """
-        return self.cmd("workspace", "show", **kwargs)
+        global_opts = self._generate_default_general_options(False)
+        return self.cmd(global_opts, "workspace", "show", **kwargs)
 
     def list_workspace(self) -> List[str]:
         """List of workspaces
-        
+
         :return: workspaces
         :example:
             >>> tf = Terraform()
@@ -475,8 +456,92 @@ class Terraform:
             )
         )
 
+    def _generate_default_args(self, dir_or_plan: Optional[str]) -> Sequence[str]:
+        if (self.terraform_version < 1.0 and dir_or_plan):
+            return [dir_or_plan]
+        else:
+            return []
+
+    def _generate_default_general_options(self, dir_or_plan: Optional[str]) -> Dict[str, Any]:
+        if (self.terraform_version >= 1.0 and dir_or_plan):
+            return {"chdir": dir_or_plan}
+        else:
+            return {}
+
+    def _generate_default_options(
+        self, input_options: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        return {
+            "state": self.state,
+            "target": self.targets,
+            "var": self.variables,
+            "var_file": self.var_file,
+            "parallelism": self.parallelism,
+            "no_color": IsFlagged,
+            "input": False,
+            **input_options,
+        }
+
+    def _generate_cmd_options(self, **kwargs) -> List[str]:
+        """
+        """
+        result = []
+
+        for option, value in kwargs.items():
+            if "_" in option:
+                option = option.replace("_", "-")
+
+            if isinstance(value, list):
+                for sub_v in value:
+                    result += [f"-{option}={sub_v}"]
+                continue
+
+            if isinstance(value, dict):
+                if "backend-config" in option:
+                    for bk, bv in value.items():
+                        result += [f"-backend-config={bk}={bv}"]
+                    continue
+
+                # since map type sent in string won't work, create temp var file for
+                # variables, and clean it up later
+                elif option == "var":
+                    # We do not create empty var-files if there is no var passed.
+                    # An empty var-file would result in an error: An argument or block definition is required here
+                    if value:
+                        filename = self.temp_var_files.create(value)
+                        result += [f"-var-file={filename}"]
+
+                    continue
+
+            # simple flag,
+            if value is IsFlagged:
+                result += [f"-{option}"]
+                continue
+
+            if value is None or value is IsNotFlagged:
+                continue
+
+            if isinstance(value, bool):
+                value = "true" if value else "false"
+
+            result += [f"-{option}={value}"]
+        return result
+
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.temp_var_files.clean_up()
+
+    def __getattr__(self, item: str) -> Callable:
+        def wrapper(*args, **kwargs):
+            cmd_name = str(item)
+            if cmd_name.endswith("_cmd"):
+                cmd_name = cmd_name[:-4]
+            logger.debug("called with %r and %r", args, kwargs)
+            global_opts = self._generate_default_general_options(False)
+            return self.cmd(global_opts, cmd_name, *args, **kwargs)
+
+        return wrapper
+
+
 
 
 class VariableFiles:
