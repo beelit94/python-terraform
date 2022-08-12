@@ -25,7 +25,7 @@ class IsNotFlagged(TerraformFlag):
     pass
 
 
-CommandOutput = Tuple[Optional[int], Optional[str], Optional[str]]
+CommandOutput = Tuple[Union[int, subprocess.Popen, None], Optional[str], Optional[str]]
 
 
 class TerraformCommandError(subprocess.CalledProcessError):
@@ -342,7 +342,7 @@ class Terraform:
         )
 
         if not synchronous:
-            return None, None, None
+            return p, None, None
 
         out, err = p.communicate()
         ret_code = p.returncode
