@@ -337,9 +337,28 @@ class Terraform:
         if self.is_env_vars_included:
             environ_vars = os.environ.copy()
 
-        p = subprocess.Popen(
-            cmds, stdout=stdout, stderr=stderr, cwd=working_folder, env=environ_vars
-        )
+        try:
+            p = subprocess.Popen(
+                cmds, stdout=stdout, stderr=stderr, cwd=working_folder, env=environ_vars
+            )
+        except FileNotFoundError as fnfe_exc:
+            # if no other path to the terraform binary was provided
+            if self.terraform_bin_path == "terraform":
+                msg = (
+                    "The 'terraform' command failed to invoke. Ensure the terraform " \
+                    "binary is on Path or provide the correct path to the binary."
+                )
+                try:
+                    # keep the command error to get to logs
+                    raise TerraformCommandError(
+                        1, " ".join(cmds), out="", err=type(fnfe_exc).__name__
+                    ) from fnfe_exc
+                except TerraformCommandError as tfce_exc:
+                    # add context for why 'terraform' invoke failed
+                    raise RuntimeError(msg) from tfce_exc
+
+            else:
+                raise TerraformCommandError(1, " ".join(cmds), out="", err=repr(fnfe_exc)) from fnfe_exc
 
         if not synchronous:
             return None, None, None
