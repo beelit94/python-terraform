@@ -152,7 +152,8 @@ class Terraform:
         :return: ret_code, stdout, stderr
         """
         default = kwargs.copy()
-        default["force"] = force
+        """Updated to handle TF upgrades"""
+        default["auto_approve"] = True
         options = self._generate_default_options(default)
         args = self._generate_default_args(dir_or_plan)
         return self.cmd("destroy", *args, **options)
@@ -362,7 +363,8 @@ class Terraform:
             err = None
 
         if ret_code and raise_on_error:
-            raise TerraformCommandError(ret_code, " ".join(cmds), out=out, err=err)
+            raise TerraformCommandError(
+                ret_code, " ".join(cmds), out=out, err=err)
 
         return ret_code, out, err
 
@@ -414,7 +416,8 @@ class Terraform:
         file_path = file_path or self.state or ""
 
         if not file_path:
-            backend_path = os.path.join(file_path, ".terraform", "terraform.tfstate")
+            backend_path = os.path.join(
+                file_path, ".terraform", "terraform.tfstate")
 
             if os.path.exists(os.path.join(working_dir, backend_path)):
                 file_path = backend_path
@@ -458,7 +461,7 @@ class Terraform:
 
     def list_workspace(self) -> List[str]:
         """List of workspaces
-        
+
         :return: workspaces
         :example:
             >>> tf = Terraform()
